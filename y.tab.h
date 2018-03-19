@@ -45,99 +45,115 @@ extern int yydebug;
 # define YYTOKENTYPE
   enum yytokentype
   {
-    IDENTIFIER = 258,
-    I_CONSTANT = 259,
-    F_CONSTANT = 260,
-    STRING_LITERAL = 261,
-    SIZEOF = 262,
-    PTR_OP = 263,
-    INC_OP = 264,
-    DEC_OP = 265,
-    LE_OP = 266,
-    GE_OP = 267,
-    EQ_OP = 268,
-    NE_OP = 269,
-    AND_OP = 270,
-    OR_OP = 271,
-    MUL_ASSIGN = 272,
-    DIV_ASSIGN = 273,
-    MOD_ASSIGN = 274,
-    ADD_ASSIGN = 275,
-    SUB_ASSIGN = 276,
-    LEFT_ASSIGN = 277,
-    RIGHT_ASSIGN = 278,
-    AND_ASSIGN = 279,
-    XOR_ASSIGN = 280,
-    OR_ASSIGN = 281,
-    TYPEDEF_NAME = 282,
-    TYPEDEF = 283,
-    STATIC = 284,
-    INLINE = 285,
-    CONST = 286,
-    CHAR = 287,
-    SHORT = 288,
-    INT = 289,
-    LONG = 290,
-    SIGNED = 291,
-    UNSIGNED = 292,
-    FLOAT = 293,
-    DOUBLE = 294,
-    VOID = 295,
-    STRUCT = 296,
-    IF = 297,
-    ELSE = 298,
-    FOR = 299,
-    CONTINUE = 300,
-    BREAK = 301,
-    RETURN = 302
+    HASH = 258,
+    INCLUDE = 259,
+    DEFINE = 260,
+    STDIO = 261,
+    STDLIB = 262,
+    MATH = 263,
+    STRING = 264,
+    TIME = 265,
+    IDENTIFIER = 266,
+    I_CONSTANT = 267,
+    F_CONSTANT = 268,
+    STRING_LITERAL = 269,
+    SIZEOF = 270,
+    PTR_OP = 271,
+    INC_OP = 272,
+    DEC_OP = 273,
+    LE_OP = 274,
+    GE_OP = 275,
+    EQ_OP = 276,
+    NE_OP = 277,
+    AND_OP = 278,
+    OR_OP = 279,
+    MUL_ASSIGN = 280,
+    DIV_ASSIGN = 281,
+    MOD_ASSIGN = 282,
+    ADD_ASSIGN = 283,
+    SUB_ASSIGN = 284,
+    LEFT_ASSIGN = 285,
+    RIGHT_ASSIGN = 286,
+    AND_ASSIGN = 287,
+    XOR_ASSIGN = 288,
+    OR_ASSIGN = 289,
+    TYPEDEF_NAME = 290,
+    TYPEDEF = 291,
+    STATIC = 292,
+    CONST = 293,
+    CHAR = 294,
+    SHORT = 295,
+    INT = 296,
+    LONG = 297,
+    SIGNED = 298,
+    UNSIGNED = 299,
+    FLOAT = 300,
+    DOUBLE = 301,
+    VOID = 302,
+    MAIN = 303,
+    STRUCT = 304,
+    IF = 305,
+    ELSE = 306,
+    FOR = 307,
+    CONTINUE = 308,
+    BREAK = 309,
+    RETURN = 310
   };
 #endif
 /* Tokens.  */
-#define IDENTIFIER 258
-#define I_CONSTANT 259
-#define F_CONSTANT 260
-#define STRING_LITERAL 261
-#define SIZEOF 262
-#define PTR_OP 263
-#define INC_OP 264
-#define DEC_OP 265
-#define LE_OP 266
-#define GE_OP 267
-#define EQ_OP 268
-#define NE_OP 269
-#define AND_OP 270
-#define OR_OP 271
-#define MUL_ASSIGN 272
-#define DIV_ASSIGN 273
-#define MOD_ASSIGN 274
-#define ADD_ASSIGN 275
-#define SUB_ASSIGN 276
-#define LEFT_ASSIGN 277
-#define RIGHT_ASSIGN 278
-#define AND_ASSIGN 279
-#define XOR_ASSIGN 280
-#define OR_ASSIGN 281
-#define TYPEDEF_NAME 282
-#define TYPEDEF 283
-#define STATIC 284
-#define INLINE 285
-#define CONST 286
-#define CHAR 287
-#define SHORT 288
-#define INT 289
-#define LONG 290
-#define SIGNED 291
-#define UNSIGNED 292
-#define FLOAT 293
-#define DOUBLE 294
-#define VOID 295
-#define STRUCT 296
-#define IF 297
-#define ELSE 298
-#define FOR 299
-#define CONTINUE 300
-#define BREAK 301
-#define RETURN 302
+#define HASH 258
+#define INCLUDE 259
+#define DEFINE 260
+#define STDIO 261
+#define STDLIB 262
+#define MATH 263
+#define STRING 264
+#define TIME 265
+#define IDENTIFIER 266
+#define I_CONSTANT 267
+#define F_CONSTANT 268
+#define STRING_LITERAL 269
+#define SIZEOF 270
+#define PTR_OP 271
+#define INC_OP 272
+#define DEC_OP 273
+#define LE_OP 274
+#define GE_OP 275
+#define EQ_OP 276
+#define NE_OP 277
+#define AND_OP 278
+#define OR_OP 279
+#define MUL_ASSIGN 280
+#define DIV_ASSIGN 281
+#define MOD_ASSIGN 282
+#define ADD_ASSIGN 283
+#define SUB_ASSIGN 284
+#define LEFT_ASSIGN 285
+#define RIGHT_ASSIGN 286
+#define AND_ASSIGN 287
+#define XOR_ASSIGN 288
+#define OR_ASSIGN 289
+#define TYPEDEF_NAME 290
+#define TYPEDEF 291
+#define STATIC 292
+#define CONST 293
+#define CHAR 294
+#define SHORT 295
+#define INT 296
+#define LONG 297
+#define SIGNED 298
+#define UNSIGNED 299
+#define FLOAT 300
+#define DOUBLE 301
+#define VOID 302
+#define MAIN 303
+#define STRUCT 304
+#define IF 305
+#define ELSE 306
+#define FOR 307
+#define CONTINUE 308
+#define BREAK 309
+#define RETURN 310
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED

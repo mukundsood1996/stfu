@@ -20,11 +20,11 @@
 
 %token	TYPEDEF_NAME
 
-%token	TYPEDEF STATIC
+%token	TYPEDEF STATIC INLINE
 
 %token	CONST
 
-%token	CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE VOID MAIN
+%token	CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE VOID
 
 %token	STRUCT
 
@@ -195,6 +195,8 @@ declaration_specifiers
 	| type_specifier
 	| CONST declaration_specifiers
 	| CONST
+	| INLINE declaration_specifiers
+	| INLINE
 	;
 
 init_declarator_list
@@ -414,9 +416,19 @@ translation_unit
 	;
 
 external_declaration
-	: INT MAIN '(' ')' compound_statement
+	: function_definition
 	| declaration
 	| headers
+	;
+
+function_definition
+	: declaration_specifiers declarator declaration_list compound_statement
+	| declaration_specifiers declarator compound_statement
+	;
+
+declaration_list
+	: declaration
+	| declaration_list declaration
 	;
 
 %%

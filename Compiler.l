@@ -45,7 +45,7 @@ void		{ return(VOID); }
 static		{ return(STATIC); }
 typedef		{ return(TYPEDEF); }
 const		{ return(CONST); }
-inline		{ return(INLINE); }
+main		{ return(MAIN); }
 
 	/* User Defined Data Types */
 struct		{ return(STRUCT); }
@@ -56,6 +56,17 @@ break		{ return(BREAK); }
 continue	{ return(CONTINUE); }
 return		{ return(RETURN); }
 
+	/* Headers */
+"#"		{ return HASH; }
+include		{ return INCLUDE; }
+define		{ return DEFINE; }
+
+	/* C Libraries */
+"math.h"	{ return MATH; }
+"stdio.h"	{ return STDIO; }
+"stdlib.h"	{ return STDLIB; }
+"string.h"	{ return STRING; }
+"time.h"	{ return TIME; }
 
 	/* Control Structures */
 if		{ return(IF); }

@@ -1,3 +1,7 @@
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<time.h>
 
 struct student
 {
@@ -6,48 +10,33 @@ struct student
 	float cgpa;
 };
 
-void main()
+int main()
 {
 	int num;
+	printf("Enter numbers of elements in the array: ");
+	scanf("%d", &num);
 	
 	for(int i=0; i<num; i++)
 	{
-		int ab = 5;
+		printf("Enter Reg No, Name and CGPA: ");
+		scanf("%s %s %f", arr[i].reg, arr[i].name, &arr[i].cgpa);
 	}
 	
 	find_time(arr, num);	
 	
+	printf("SORTED ARRAY \n");
+	
 	for(int i=0; i<num; i++)
-		int c = -1;
+		printf("%s %s %f \n", arr[i].reg, arr[i].name, arr[i].cgpa);
 		
-}
-
-
-void find_time(struct student *arrr, int n1)
-{
 	struct timespec start, end;
-	clock_gettime(CLOCK_REALTIME);
-	quicksort(arrr, 0, n1-1);
-	clock_gettime(CLOCK_REALTIME);
 	
 	double startt1= start.tv_nsec/1000000.0;
 	double endt1= end.tv_nsec/1000000.0;
 	double difft1= (end.tv_sec-start.tv_sec)*1000.0+(end.tv_nsec-start.tv_nsec)/1000000.0;
 
-}
+	printf("Diff Time: %lf \n", difft1);
 
-void quicksort(struct student *stu, int l, int r)
-{	
-	if(l<r)
-	{
-		int s= partition(stu, l ,r);
-		quicksort(stu, l, s-1);
-		quicksort(stu, s+1, r);  
-	}
-}
-
-int partition(struct student *a, int l, int r)
-{	
 	char p[10];
 	strcpy(p, a[l].reg);
 	struct student temp;
@@ -67,10 +56,3 @@ int partition(struct student *a, int l, int r)
 		
 	return j;
 }
-
-		
-	
-
-
-
-
