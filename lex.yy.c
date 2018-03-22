@@ -174,8 +174,27 @@ extern FILE *yyin, *yyout;
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
 
-    #define YY_LESS_LINENO(n)
-    #define YY_LINENO_REWIND_TO(ptr)
+    /* Note: We specifically omit the test for yy_rule_can_match_eol because it requires
+     *       access to the local variable yy_act. Since yyless() is a macro, it would break
+     *       existing scanners that call yyless() from OUTSIDE yylex. 
+     *       One obvious solution it to make yy_act a global. I tried that, and saw
+     *       a 5% performance hit in a non-yylineno scanner, because yy_act is
+     *       normally declared as a register variable-- so it is not worth it.
+     */
+    #define  YY_LESS_LINENO(n) \
+            do { \
+                int yyl;\
+                for ( yyl = n; yyl < yyleng; ++yyl )\
+                    if ( yytext[yyl] == '\n' )\
+                        --yylineno;\
+            }while(0)
+    #define YY_LINENO_REWIND_TO(dst) \
+            do {\
+                const char *p;\
+                for ( p = yy_cp-1; p >= (dst); --p)\
+                    if ( *p == '\n' )\
+                        --yylineno;\
+            }while(0)
     
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
@@ -677,6 +696,15 @@ static yyconst flex_int16_t yy_chk[624] =
       275,  275,  275
     } ;
 
+/* Table of booleans, true if rule could match eol. */
+static yyconst flex_int32_t yy_rule_can_match_eol[88] =
+    {   0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 1, 0, 0,     };
+
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
 
@@ -696,6 +724,8 @@ char *yytext;
 	#include <stdio.h>
 	#include "y.tab.h"
 
+	// #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;
+
 	extern void yyerror(const char *);  /* prints grammar violation message */
 
 	extern int sym_type(const char *);  /* returns type from symbol table */
@@ -703,8 +733,10 @@ char *yytext;
 	#define sym_type(identifier) IDENTIFIER /* with no symbol table, fake it */
 
 	static void comment(void);
+
 	static int check_type(void);
-#line 708 "lex.yy.c"
+
+#line 740 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -922,9 +954,9 @@ YY_DECL
 		}
 
 	{
-#line 31 "Compiler.l"
+#line 37 "Compiler.l"
 
-#line 928 "lex.yy.c"
+#line 960 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -970,6 +1002,16 @@ yy_find_action:
 
 		YY_DO_BEFORE_ACTION;
 
+		if ( yy_act != YY_END_OF_BUFFER && yy_rule_can_match_eol[yy_act] )
+			{
+			yy_size_t yyl;
+			for ( yyl = 0; yyl < yyleng; ++yyl )
+				if ( yytext[yyl] == '\n' )
+					   
+    yylineno++;
+;
+			}
+
 do_action:	/* This label is used only to access EOF actions. */
 
 		switch ( yy_act )
@@ -983,453 +1025,453 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 32 "Compiler.l"
+#line 38 "Compiler.l"
 { comment(); }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 33 "Compiler.l"
+#line 39 "Compiler.l"
 { /* Consume Comment */ }
 	YY_BREAK
 /* Data Types */
 case 3:
 YY_RULE_SETUP
-#line 36 "Compiler.l"
+#line 42 "Compiler.l"
 { return(INT); }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 37 "Compiler.l"
+#line 43 "Compiler.l"
 { return(SIGNED); }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 38 "Compiler.l"
+#line 44 "Compiler.l"
 { return(UNSIGNED); }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 39 "Compiler.l"
+#line 45 "Compiler.l"
 { return(SHORT); }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 40 "Compiler.l"
+#line 46 "Compiler.l"
 { return(LONG); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 41 "Compiler.l"
+#line 47 "Compiler.l"
 { return(FLOAT); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 42 "Compiler.l"
+#line 48 "Compiler.l"
 { return(DOUBLE); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 43 "Compiler.l"
+#line 49 "Compiler.l"
 { return(CHAR); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 44 "Compiler.l"
+#line 50 "Compiler.l"
 { return(VOID); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 45 "Compiler.l"
+#line 51 "Compiler.l"
 { return(STATIC); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 46 "Compiler.l"
+#line 52 "Compiler.l"
 { return(TYPEDEF); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 47 "Compiler.l"
+#line 53 "Compiler.l"
 { return(CONST); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 48 "Compiler.l"
+#line 54 "Compiler.l"
 { return(MAIN); }
 	YY_BREAK
 /* User Defined Data Types */
 case 16:
 YY_RULE_SETUP
-#line 51 "Compiler.l"
+#line 57 "Compiler.l"
 { return(STRUCT); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 52 "Compiler.l"
+#line 58 "Compiler.l"
 { return(SIZEOF); }
 	YY_BREAK
 /* Program Flow Statements */
 case 18:
 YY_RULE_SETUP
-#line 55 "Compiler.l"
+#line 61 "Compiler.l"
 { return(BREAK); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 56 "Compiler.l"
+#line 62 "Compiler.l"
 { return(CONTINUE); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 57 "Compiler.l"
+#line 63 "Compiler.l"
 { return(RETURN); }
 	YY_BREAK
 /* Headers */
 case 21:
 YY_RULE_SETUP
-#line 60 "Compiler.l"
+#line 66 "Compiler.l"
 { return HASH; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 61 "Compiler.l"
+#line 67 "Compiler.l"
 { return INCLUDE; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 62 "Compiler.l"
+#line 68 "Compiler.l"
 { return DEFINE; }
 	YY_BREAK
 /* C Libraries */
 case 24:
 YY_RULE_SETUP
-#line 65 "Compiler.l"
+#line 71 "Compiler.l"
 { return MATH; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 66 "Compiler.l"
+#line 72 "Compiler.l"
 { return STDIO; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 67 "Compiler.l"
+#line 73 "Compiler.l"
 { return STDLIB; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 68 "Compiler.l"
+#line 74 "Compiler.l"
 { return STRING; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 69 "Compiler.l"
+#line 75 "Compiler.l"
 { return TIME; }
 	YY_BREAK
 /* Control Structures */
 case 29:
 YY_RULE_SETUP
-#line 72 "Compiler.l"
+#line 78 "Compiler.l"
 { return(IF); }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 73 "Compiler.l"
+#line 79 "Compiler.l"
 { return(ELSE); }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 74 "Compiler.l"
+#line 80 "Compiler.l"
 { return(FOR); }
 	YY_BREAK
 /* User Defined Data Types, Identifiers */
 case 32:
 YY_RULE_SETUP
-#line 77 "Compiler.l"
+#line 83 "Compiler.l"
 { return check_type(); }
 	YY_BREAK
 /* Constants, Numbers, Literals */
 case 33:
 YY_RULE_SETUP
-#line 80 "Compiler.l"
+#line 86 "Compiler.l"
 { return I_CONSTANT; }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 81 "Compiler.l"
+#line 87 "Compiler.l"
 { return I_CONSTANT; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 82 "Compiler.l"
+#line 88 "Compiler.l"
 { return I_CONSTANT; }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 83 "Compiler.l"
+#line 89 "Compiler.l"
 { return I_CONSTANT; }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 85 "Compiler.l"
+#line 91 "Compiler.l"
 { return F_CONSTANT; }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 86 "Compiler.l"
+#line 92 "Compiler.l"
 { return F_CONSTANT; }
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 87 "Compiler.l"
+#line 93 "Compiler.l"
 { return F_CONSTANT; }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 88 "Compiler.l"
+#line 94 "Compiler.l"
 { return F_CONSTANT; }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 89 "Compiler.l"
+#line 95 "Compiler.l"
 { return F_CONSTANT; }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 90 "Compiler.l"
+#line 96 "Compiler.l"
 { return F_CONSTANT; }
 	YY_BREAK
 case 43:
 /* rule 43 can match eol */
 YY_RULE_SETUP
-#line 92 "Compiler.l"
+#line 98 "Compiler.l"
 { return STRING_LITERAL; }
 	YY_BREAK
 /* Assignment Operators */
 case 44:
 YY_RULE_SETUP
-#line 95 "Compiler.l"
+#line 101 "Compiler.l"
 {return(ADD_ASSIGN); }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 96 "Compiler.l"
+#line 102 "Compiler.l"
 {return(SUB_ASSIGN); }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 97 "Compiler.l"
+#line 103 "Compiler.l"
 {return(MUL_ASSIGN); }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 98 "Compiler.l"
+#line 104 "Compiler.l"
 {return(DIV_ASSIGN); }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 99 "Compiler.l"
+#line 105 "Compiler.l"
 {return(MOD_ASSIGN); }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 100 "Compiler.l"
+#line 106 "Compiler.l"
 {return(AND_ASSIGN); }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 101 "Compiler.l"
+#line 107 "Compiler.l"
 {return(XOR_ASSIGN); }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 102 "Compiler.l"
+#line 108 "Compiler.l"
 {return(OR_ASSIGN); }
 	YY_BREAK
 /* Relational Operators */
 case 52:
 YY_RULE_SETUP
-#line 105 "Compiler.l"
+#line 111 "Compiler.l"
 {return(INC_OP); }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 106 "Compiler.l"
+#line 112 "Compiler.l"
 {return(DEC_OP); }
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 107 "Compiler.l"
+#line 113 "Compiler.l"
 {return(PTR_OP); }
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 108 "Compiler.l"
+#line 114 "Compiler.l"
 {return(AND_OP); }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 109 "Compiler.l"
+#line 115 "Compiler.l"
 {return(OR_OP); }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 110 "Compiler.l"
+#line 116 "Compiler.l"
 {return(LE_OP); }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 111 "Compiler.l"
+#line 117 "Compiler.l"
 {return(GE_OP); }
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 112 "Compiler.l"
+#line 118 "Compiler.l"
 {return(EQ_OP); }
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 113 "Compiler.l"
+#line 119 "Compiler.l"
 {return(NE_OP); }
 	YY_BREAK
 /* Basic Syntac */
 case 61:
 YY_RULE_SETUP
-#line 116 "Compiler.l"
+#line 122 "Compiler.l"
 {return(';'); }
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 117 "Compiler.l"
+#line 123 "Compiler.l"
 {return('{'); }
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 118 "Compiler.l"
+#line 124 "Compiler.l"
 {return('}'); }
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 119 "Compiler.l"
+#line 125 "Compiler.l"
 {return(','); }
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 120 "Compiler.l"
+#line 126 "Compiler.l"
 {return(':'); }
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 121 "Compiler.l"
+#line 127 "Compiler.l"
 {return('='); }
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 122 "Compiler.l"
+#line 128 "Compiler.l"
 {return('('); }
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 123 "Compiler.l"
+#line 129 "Compiler.l"
 {return(')'); }
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 124 "Compiler.l"
+#line 130 "Compiler.l"
 {return('['); }
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 125 "Compiler.l"
+#line 131 "Compiler.l"
 {return(']'); }
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 126 "Compiler.l"
+#line 132 "Compiler.l"
 {return('.'); }
 	YY_BREAK
 case 72:
 YY_RULE_SETUP
-#line 127 "Compiler.l"
+#line 133 "Compiler.l"
 {return('&'); }
 	YY_BREAK
 case 73:
 YY_RULE_SETUP
-#line 128 "Compiler.l"
+#line 134 "Compiler.l"
 {return('!'); }
 	YY_BREAK
 case 74:
 YY_RULE_SETUP
-#line 129 "Compiler.l"
+#line 135 "Compiler.l"
 {return('~'); }
 	YY_BREAK
 case 75:
 YY_RULE_SETUP
-#line 130 "Compiler.l"
+#line 136 "Compiler.l"
 {return('-'); }
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 131 "Compiler.l"
+#line 137 "Compiler.l"
 {return('+'); }
 	YY_BREAK
 case 77:
 YY_RULE_SETUP
-#line 132 "Compiler.l"
+#line 138 "Compiler.l"
 {return('*'); }
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 133 "Compiler.l"
+#line 139 "Compiler.l"
 {return('/'); }
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 134 "Compiler.l"
+#line 140 "Compiler.l"
 {return('%'); }
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 135 "Compiler.l"
+#line 141 "Compiler.l"
 {return('<'); }
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 136 "Compiler.l"
+#line 142 "Compiler.l"
 {return('>'); }
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 137 "Compiler.l"
+#line 143 "Compiler.l"
 {return('^'); }
 	YY_BREAK
 case 83:
 YY_RULE_SETUP
-#line 138 "Compiler.l"
+#line 144 "Compiler.l"
 {return('|'); }
 	YY_BREAK
 case 84:
 YY_RULE_SETUP
-#line 139 "Compiler.l"
+#line 145 "Compiler.l"
 {return('?'); }
 	YY_BREAK
 case 85:
 /* rule 85 can match eol */
 YY_RULE_SETUP
-#line 142 "Compiler.l"
+#line 148 "Compiler.l"
 { /* whitespace separates tokens */}
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 144 "Compiler.l"
+#line 150 "Compiler.l"
 { printf("No Match, Invalid Expression %s\n", yytext); }
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 145 "Compiler.l"
+#line 151 "Compiler.l"
 ECHO;
 	YY_BREAK
-#line 1433 "lex.yy.c"
+#line 1475 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1793,6 +1835,10 @@ static int yy_get_next_buffer (void)
 
 	*--yy_cp = (char) c;
 
+    if ( c == '\n' ){
+        --yylineno;
+    }
+
 	(yytext_ptr) = yy_bp;
 	(yy_hold_char) = *yy_cp;
 	(yy_c_buf_p) = yy_cp;
@@ -1869,6 +1915,11 @@ static int yy_get_next_buffer (void)
 	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
 	*(yy_c_buf_p) = '\0';	/* preserve yytext */
 	(yy_hold_char) = *++(yy_c_buf_p);
+
+	if ( c == '\n' )
+		   
+    yylineno++;
+;
 
 	return c;
 }
@@ -2336,6 +2387,9 @@ static int yy_init_globals (void)
      * This function is called from yylex_destroy(), so don't allocate here.
      */
 
+    /* We do not touch yylineno unless the option is enabled. */
+    yylineno =  1;
+    
     (yy_buffer_stack) = 0;
     (yy_buffer_stack_top) = 0;
     (yy_buffer_stack_max) = 0;
@@ -2430,7 +2484,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 145 "Compiler.l"
+#line 151 "Compiler.l"
 
 
 

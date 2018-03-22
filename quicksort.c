@@ -5,27 +5,33 @@
 
 struct student
 {
-	char reg[10];
-	char name[10];
+	int my_name_is_what;
 	float cgpa;
 };
 
 int main()
 {
-	int num;
-	printf("Enter numbers of elements in the array: ");
-	scanf("%d", &num);
+	int i, j;
 	
+	int *num = &i;
+
+	printf("Enter numbers of elements in the array: ");
+
 	for(int i=0; i<num; i++)
 	{
 		printf("Enter Reg No, Name and CGPA: ");
 		scanf("%s %s %f", arr[i].reg, arr[i].name, &arr[i].cgpa);
+
+		for(int i=0; i<num; i++){
+			for(int i=0; i<num; i++){
+				int a = 25;
+			}
+		}
+
+	
 	}
-	
-	find_time(arr, num);	
-	
 	printf("SORTED ARRAY \n");
-	
+
 	for(int i=0; i<num; i++)
 		printf("%s %s %f \n", arr[i].reg, arr[i].name, arr[i].cgpa);
 		
@@ -37,22 +43,12 @@ int main()
 
 	printf("Diff Time: %lf \n", difft1);
 
-	char p[10];
 	strcpy(p, a[l].reg);
 	struct student temp;
 	
 	int i= l; 
 	int j= r+1;
-	
-	//swap(a[i].reg, a[j].reg);
-	temp= a[i];
-	a[i]= a[j];
-	a[j]= temp;
 
-	//swap(a[l].reg, a[j].reg);
-	temp= a[l];
-	a[l]= a[j];
-	a[j]= temp;
-		
 	return j;
+
 }

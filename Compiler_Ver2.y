@@ -1,9 +1,30 @@
 %{
 	#define YYDEBUG 1
 	#include<stdio.h>
-	#include <stdlib.h>
+	#include<stdlib.h>
+	#include<string.h>
+	
 	void yyerror(const char*);
 	int yylex();
+	int isDefined(char);
+	void insert(char, int);
+
+	// Global variables to keep track of the most recent variables scope and type
+	int scope = 0;
+	char type[4] = "none";
+
+	// Structure for each symbol in the symbol table
+	typedef struct sym_tab_entry{
+		char name[32];
+		char type[4];
+		int scope;
+		int lineno;
+
+		struct sym_tab_entry *next;
+	} symbol;
+
+	// Symbol for head node
+	symbol *head = NULL, *current = NULL;
 %}
 
 %token HASH INCLUDE DEFINE STDIO STDLIB MATH STRING TIME
@@ -20,11 +41,11 @@
 
 %token	TYPEDEF_NAME
 
-%token	TYPEDEF STATIC INLINE
+%token	TYPEDEF STATIC
 
 %token	CONST
 
-%token	CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE VOID
+%token	CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE VOID MAIN
 
 %token	STRUCT
 
@@ -52,9 +73,9 @@ libraries
 	;
 
 primary_expression
-	: IDENTIFIER
-	| I_CONSTANT
-	| F_CONSTANT
+	: IDENTIFIER 		{ insert((char)$1, @1.first_line); }
+	| I_CONSTANT		{ insert((char)$1, @1.first_line); }
+	| F_CONSTANT		{ insert((char)$1, @1.first_line); }
 	| STRING_LITERAL
 	| '(' expression ')'
 	;
@@ -64,8 +85,8 @@ postfix_expression
 	| postfix_expression '[' expression ']'
 	| postfix_expression '(' ')'
 	| postfix_expression '(' argument_expression_list ')'
-	| postfix_expression '.' IDENTIFIER
-	| postfix_expression PTR_OP IDENTIFIER
+	| postfix_expression '.' IDENTIFIER 					{ insert((char)$1, @1.first_line); }
+	| postfix_expression PTR_OP IDENTIFIER 					{ insert((char)$1, @1.first_line); }
 	| postfix_expression INC_OP
 	| postfix_expression DEC_OP
 	| '(' type_name ')' '{' initializer_list '}'
@@ -195,8 +216,6 @@ declaration_specifiers
 	| type_specifier
 	| CONST declaration_specifiers
 	| CONST
-	| INLINE declaration_specifiers
-	| INLINE
 	;
 
 init_declarator_list
@@ -215,23 +234,23 @@ storage_class_specifier
 	;
 
 type_specifier
-	: VOID
-	| CHAR
-	| SHORT
-	| INT
-	| LONG
-	| FLOAT
-	| DOUBLE
-	| SIGNED
-	| UNSIGNED
-	| struct_specifier
-	| TYPEDEF_NAME		/* after it has been defined as such */
+	: VOID 				{ strcpy(type, "v"); }
+	| CHAR 				{ strcpy(type, "c"); }
+	| SHORT 			{ strcpy(type, "sh"); }
+	| INT 				{ strcpy(type, "i"); }
+	| LONG 				{ strcpy(type, "l"); }
+	| FLOAT 			{ strcpy(type, "f"); }
+	| DOUBLE			{ strcpy(type, "d"); }
+	| SIGNED			{ strcpy(type, "sg"); }
+	| UNSIGNED			{ strcpy(type, "usg"); }
+	| struct_specifier		{ strcpy(type, "strt"); }
+	| TYPEDEF_NAME			{ strcpy(type, "tydf"); }	/* after it has been defined as such */
 	;
 
 struct_specifier
 	: STRUCT '{' struct_declaration_list '}'
-	| STRUCT IDENTIFIER '{' struct_declaration_list '}'
-	| STRUCT IDENTIFIER
+	| STRUCT IDENTIFIER { insert((char)$1, @1.first_line); } '{' struct_declaration_list '}'
+	| STRUCT IDENTIFIER { insert((char)$1, @1.first_line); }
 	;
 
 struct_declaration_list
@@ -268,7 +287,7 @@ declarator
 	;
 
 direct_declarator
-	: IDENTIFIER
+	: IDENTIFIER 						{ printf("abc %s", $1); insert((char)$1, @1.first_line); }
 	| '(' declarator ')'
 	| direct_declarator '[' ']'
 	| direct_declarator '[' '*' ']'
@@ -303,8 +322,8 @@ parameter_declaration
 	;
 
 identifier_list
-	: IDENTIFIER
-	| identifier_list ',' IDENTIFIER
+	: IDENTIFIER 				{ insert((char)$1, @1.first_line); }
+	| identifier_list ',' IDENTIFIER 	{ insert((char)$1, @1.first_line); }
 	;
 
 type_name
@@ -366,19 +385,19 @@ designator_list
 
 designator
 	: '[' constant_expression ']'
-	| '.' IDENTIFIER
+	| '.' IDENTIFIER 				{ insert((char)$1, @1.first_line); }
 	;
 
 statement
-	: compound_statement
+	: compound_statement 	{ scope++; } 
 	| expression_statement
 	| iteration_statement
 	| jump_statement
 	;
 
 compound_statement
-	: '{' '}'
-	| '{'  block_item_list '}'
+	: '{' '}'				{ scope--; }
+	| '{'  block_item_list '}'		{ scope--; }
 	;
 
 block_item_list
@@ -397,10 +416,10 @@ expression_statement
 	;
 
 iteration_statement
-	: FOR '(' expression_statement expression_statement ')' statement
-	| FOR '(' expression_statement expression_statement expression ')' statement
-	| FOR '(' declaration expression_statement ')' statement
-	| FOR '(' declaration expression_statement expression ')' statement
+	: FOR '(' expression_statement expression_statement ')'  statement 
+	| FOR '(' expression_statement expression_statement expression ')' statement 	
+	| FOR '(' declaration expression_statement ')' statement 						
+	| FOR '(' declaration expression_statement expression ')' statement 			
 	;
 
 jump_statement
@@ -416,32 +435,79 @@ translation_unit
 	;
 
 external_declaration
-	: function_definition
+	: INT MAIN '(' ')' compound_statement	{ scope++; } 
 	| declaration
 	| headers
 	;
 
-function_definition
-	: declaration_specifiers declarator declaration_list compound_statement
-	| declaration_specifiers declarator compound_statement
-	;
-
-declaration_list
-	: declaration
-	| declaration_list declaration
-	;
-
 %%
+
 void yyerror(const char *str)
 {
 	fflush(stdout);
 	fprintf(stderr, "*** %s\n", str);
 }
+
 int main(){
+
 	if(!yyparse())
 		printf("Successful\n");
 	else
 		printf("Unsuccessful\n");
 	
+	symbol* temp = head;
+
+	while(temp->next != NULL)
+		printf("Symbol: %s, %s, %d, %d", temp->name, temp->type, temp->scope, temp->lineno);
+
+
 	return 0;
+}
+
+int isDefined(char name){
+	symbol* temp = head;
+
+	while(temp->next != NULL){
+		if(strcmp(temp->name, (char*)name) == 0)
+			if(temp->scope == scope)
+				return 1;
+	}
+
+	return 0;
+}
+
+void insert(char name, int lineno){
+
+	printf("Hey Baby %d", lineno);
+
+	symbol* temp = (symbol*)malloc(sizeof(symbol));
+
+	printf("%s", (char*)name);
+	
+	/*strcpy(temp->name, (char*)name);
+	strcpy(temp->type, type);
+	temp->scope = scope;
+	temp->lineno = lineno;
+	temp->next = NULL;	
+
+	printf("%s, %s", temp->name, temp->type);
+
+	if(head == NULL){
+		head = temp;	
+		current = head;
+	}
+
+	else{
+		if(!isDefined(name)){
+			current->next = temp;
+			current = temp;
+		}
+		else{
+			printf("Error symbol already exists, please revise code!");
+			exit(0);
+		}
+	}
+
+	*/
+
 }

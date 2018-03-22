@@ -68,8 +68,6 @@ postfix_expression
 	| postfix_expression PTR_OP IDENTIFIER
 	| postfix_expression INC_OP
 	| postfix_expression DEC_OP
-	| '(' type_name ')' '{' initializer_list '}'
-	| '(' type_name ')' '{' initializer_list ',' '}'
 	;
 
 argument_expression_list
@@ -83,7 +81,7 @@ unary_expression
 	| DEC_OP unary_expression
 	| unary_operator cast_expression
 	| SIZEOF unary_expression
-	| SIZEOF '(' type_name ')'
+	| SIZEOF '(' specifier_qualifier_list ')'
 	;
 
 unary_operator
@@ -97,7 +95,7 @@ unary_operator
 
 cast_expression
 	: unary_expression
-	| '(' type_name ')' cast_expression
+	| '(' specifier_qualifier_list ')' cast_expression
 	;
 
 multiplicative_expression
@@ -203,7 +201,7 @@ init_declarator_list
 	;
 
 init_declarator
-	: declarator '=' initializer
+	: declarator '=' assignment_expression
 	| declarator
 	;
 
@@ -261,25 +259,8 @@ struct_declarator
 	;
 
 declarator
-	: pointer direct_declarator
-	| direct_declarator
-	;
-
-direct_declarator
-	: IDENTIFIER
-	| '(' declarator ')'
-	| direct_declarator '[' ']'
-	| direct_declarator '[' '*' ']'
-	| direct_declarator '[' STATIC CONST assignment_expression ']'
-	| direct_declarator '[' STATIC assignment_expression ']'
-	| direct_declarator '[' CONST '*' ']'
-	| direct_declarator '[' CONST STATIC assignment_expression ']'
-	| direct_declarator '[' CONST assignment_expression ']'
-	| direct_declarator '[' CONST ']'
-	| direct_declarator '[' assignment_expression ']'
-	| direct_declarator '(' parameter_list ')'
-	| direct_declarator '(' ')'
-	| direct_declarator '(' identifier_list ')'
+	: pointer IDENTIFIER
+	| IDENTIFIER
 	;
 
 pointer
@@ -287,84 +268,6 @@ pointer
 	| '*' CONST
 	| '*' pointer
 	| '*'
-	;
-
-parameter_list
-	: parameter_declaration
-	| parameter_list ',' parameter_declaration
-	;
-
-parameter_declaration
-	: declaration_specifiers declarator
-	| declaration_specifiers abstract_declarator
-	| declaration_specifiers
-	;
-
-identifier_list
-	: IDENTIFIER
-	| identifier_list ',' IDENTIFIER
-	;
-
-type_name
-	: specifier_qualifier_list abstract_declarator
-	| specifier_qualifier_list
-	;
-
-abstract_declarator
-	: pointer direct_abstract_declarator
-	| pointer
-	| direct_abstract_declarator
-	;
-
-direct_abstract_declarator
-	: '(' abstract_declarator ')'
-	| '[' ']'
-	| '[' '*' ']'
-	| '[' STATIC CONST assignment_expression ']'
-	| '[' STATIC assignment_expression ']'
-	| '[' CONST STATIC assignment_expression ']'
-	| '[' CONST assignment_expression ']'
-	| '[' CONST ']'
-	| '[' assignment_expression ']'
-	| direct_abstract_declarator '[' ']'
-	| direct_abstract_declarator '[' '*' ']'
-	| direct_abstract_declarator '[' STATIC CONST assignment_expression ']'
-	| direct_abstract_declarator '[' STATIC assignment_expression ']'
-	| direct_abstract_declarator '[' CONST assignment_expression ']'
-	| direct_abstract_declarator '[' CONST STATIC assignment_expression ']'
-	| direct_abstract_declarator '[' CONST ']'
-	| direct_abstract_declarator '[' assignment_expression ']'
-	| '(' ')'
-	| '(' parameter_list ')'
-	| direct_abstract_declarator '(' ')'
-	| direct_abstract_declarator '(' parameter_list ')'
-	;
-
-initializer
-	: '{' initializer_list '}'
-	| '{' initializer_list ',' '}'
-	| assignment_expression
-	;
-
-initializer_list
-	: designation initializer
-	| initializer
-	| initializer_list ',' designation initializer
-	| initializer_list ',' initializer
-	;
-
-designation
-	: designator_list '='
-	;
-
-designator_list
-	: designator
-	| designator_list designator
-	;
-
-designator
-	: '[' constant_expression ']'
-	| '.' IDENTIFIER
 	;
 
 statement
@@ -420,15 +323,12 @@ external_declaration
 	;
 
 %%
-
 void yyerror(const char *str)
 {
 	fflush(stdout);
 	fprintf(stderr, "*** %s\n", str);
 }
-
 int main(){
-
 	if(!yyparse())
 		printf("Successful\n");
 	else
@@ -436,24 +336,3 @@ int main(){
 	
 	return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

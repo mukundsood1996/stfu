@@ -2,6 +2,8 @@
 	#include <stdio.h>
 	#include "y.tab.h"
 
+	// #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;
+
 	extern void yyerror(const char *);  /* prints grammar violation message */
 
 	extern int sym_type(const char *);  /* returns type from symbol table */
@@ -9,8 +11,12 @@
 	#define sym_type(identifier) IDENTIFIER /* with no symbol table, fake it */
 
 	static void comment(void);
+
 	static int check_type(void);
+
 %}
+
+%option yylineno
 
 O   [0-7]
 D   [0-9]
