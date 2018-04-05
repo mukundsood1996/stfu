@@ -54,18 +54,15 @@ define		{ return DEFINE; }
 for		{ return(FOR); }
 
 	/* User Defined Data Types, Identifiers */
-{L}{A}*							{ yylval.name = strdup(yytext);return IDENTIFIER; }
-{D}+							{ yylval.i = atoi(yytext); return INT_CONST;}
-{D}+\.{D}+						{ yylval.fp = atof(yytext); return FLOAT_CONST;}							
+{L}{A}*						{return IDENTIFIER;}
+{D}+							{ return INTEGER_LITERAL;}	
 \"{A}+(".h"|".c")\"				{return HEADER_LITERAL;}
-\"{A}+\"						{yylval.str = strdup(yytext);return STRING_LITERAL;}
+L?\"(\\.|[^\\"])*\"	{ return(STRING_LITERAL); }
 
 	/* Assignment Operators */
 "+="		{return(ADD_ASSIGN); }
 "-="		{return(SUB_ASSIGN); }
-"*="		{return(MUL_ASSIGN); }
-"/="		{return(DIV_ASSIGN); }
-"%="		{return(MOD_ASSIGN); }
+
 
 	/* Relational Operators */
 "++"		{return(INC_OP); }
@@ -77,8 +74,8 @@ for		{ return(FOR); }
 
 	/* Basic Syntax */
 ";"		{return(';'); }
-("{"|"<%")	{yylval.str = strdup(yytext); return('{'); }
-("}"|"%>")	{yylval.str = strdup(yytext); return('}'); }
+"{"	{return('{'); }
+"}"	{return('}'); }
 ","		{return(','); }
 ":"		{return(':'); }
 "="		{return('='); }
