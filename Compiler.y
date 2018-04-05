@@ -1,46 +1,69 @@
 %{
 	#define YYDEBUG 1
+	#define VAR_LIMIT 50
+	#define STACK_SIZE 100
 	#include<stdio.h>
 	#include <stdlib.h>
+	#include <string.h>
 	void yyerror(const char*);
 	int yylex();
+
+	int ctr = 0;
+
+
+	typedef struct symbol
+	{
+		char var_name[256];
+		char type[4];
+		char *value;
+	}symbol;	
+
+	int top = -1;
+	
+	struct symbol_table
+	{
+		int last_inserted;
+		symbol symbol_list[VAR_LIMIT];	
+	};
+
+	symbol *init_attribute(char *var_name, char *type, char *value);
+	struct symbol_table stack[STACK_SIZE];
+	int search_stack(char *var_entry);
+	int push(char *var_name, int flag, char *type, char *value);
+	int pop();
+
 %}
+
+%union 
+{
+	int i;              /* Constant integer value */
+    float fp;               /* Constant floating point value */
+    char *str;              /* Ptr to constant string (strings are malloc'd) */
+    char *name;
+};
+
 
 %token HASH INCLUDE DEFINE STDIO STDLIB MATH STRING TIME
 
-%token	IDENTIFIER I_CONSTANT F_CONSTANT STRING_LITERAL SIZEOF
+%token	IDENTIFIER <fp>FLOAT_CONST <i>INT_CONST <str>STRING_LITERAL SIZEOF HEADER_LITERAL
 
-%token	PTR_OP INC_OP DEC_OP LE_OP GE_OP EQ_OP NE_OP
+%token	INC_OP DEC_OP LE_OP GE_OP EQ_OP NE_OP
 
-%token	AND_OP OR_OP MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN
+%token	MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN SUB_ASSIGN
 
-%token	SUB_ASSIGN LEFT_ASSIGN RIGHT_ASSIGN AND_ASSIGN
-
-%token	XOR_ASSIGN OR_ASSIGN
-
-%token	TYPEDEF_NAME
-
-%token	TYPEDEF STATIC
-
-%token	CONST
-
-%token	CHAR SHORT INT LONG SIGNED UNSIGNED FLOAT DOUBLE VOID MAIN
+%token	CHAR INT FLOAT VOID MAIN
 
 %token	STRUCT
 
-%token	IF ELSE FOR 
-
-%token CONTINUE BREAK RETURN
+%token	FOR 
 
 %start translation_unit
 
 %%
 
 headers
-	: HASH INCLUDE STRING_LITERAL
+	: HASH INCLUDE HEADER_LITERAL 
 	| HASH INCLUDE '<' libraries '>'
-	| HASH DEFINE I_CONSTANT
-	| HASH DEFINE F_CONSTANT
 	;
 
 libraries
@@ -53,56 +76,37 @@ libraries
 
 primary_expression
 	: IDENTIFIER
-	| I_CONSTANT
-	| F_CONSTANT
-	| STRING_LITERAL
+	| FLOAT_CONST			{/* Make new entry */printf("%f\n",$1);}
+	| INT_CONST				{/* Make new entry */printf("%d\n",$1);}
+	| STRING_LITERAL		
 	| '(' expression ')'
 	;
 
 postfix_expression
 	: primary_expression
-	| postfix_expression '[' expression ']'
 	| postfix_expression '(' ')'
-	| postfix_expression '(' argument_expression_list ')'
 	| postfix_expression '.' IDENTIFIER
-	| postfix_expression PTR_OP IDENTIFIER
 	| postfix_expression INC_OP
 	| postfix_expression DEC_OP
-	;
-
-argument_expression_list
-	: assignment_expression
-	| argument_expression_list ',' assignment_expression
 	;
 
 unary_expression
 	: postfix_expression
 	| INC_OP unary_expression
 	| DEC_OP unary_expression
-	| unary_operator cast_expression
-	| SIZEOF unary_expression
-	| SIZEOF '(' specifier_qualifier_list ')'
+	| unary_operator unary_expression
 	;
 
 unary_operator
-	: '&'
-	| '*'
-	| '+'
+	: '+'
 	| '-'
-	| '~'
-	| '!'
-	;
-
-cast_expression
-	: unary_expression
-	| '(' specifier_qualifier_list ')' cast_expression
 	;
 
 multiplicative_expression
-	: cast_expression
-	| multiplicative_expression '*' cast_expression
-	| multiplicative_expression '/' cast_expression
-	| multiplicative_expression '%' cast_expression
+	: unary_expression
+	| multiplicative_expression '*' unary_expression
+	| multiplicative_expression '/' unary_expression
+	| multiplicative_expression '%' unary_expression
 	;
 
 additive_expression
@@ -125,34 +129,9 @@ equality_expression
 	| equality_expression NE_OP relational_expression
 	;
 
-and_expression
-	: equality_expression
-	| and_expression '&' equality_expression
-	;
-
-exclusive_or_expression
-	: and_expression
-	| exclusive_or_expression '^' and_expression
-	;
-
-inclusive_or_expression
-	: exclusive_or_expression
-	| inclusive_or_expression '|' exclusive_or_expression
-	;
-
-logical_and_expression
-	: inclusive_or_expression
-	| logical_and_expression AND_OP inclusive_or_expression
-	;
-
-logical_or_expression
-	: logical_and_expression
-	| logical_or_expression OR_OP logical_and_expression
-	;
-
 conditional_expression
-	: logical_or_expression
-	| logical_or_expression '?' expression ':' conditional_expression
+	: equality_expression
+	| equality_expression '?' expression ':' conditional_expression
 	;
 
 assignment_expression
@@ -167,9 +146,6 @@ assignment_operator
 	| MOD_ASSIGN
 	| ADD_ASSIGN
 	| SUB_ASSIGN
-	| AND_ASSIGN
-	| XOR_ASSIGN
-	| OR_ASSIGN
 	;
 
 expression
@@ -182,17 +158,8 @@ constant_expression
 	;
 
 declaration
-	: declaration_specifiers ';'
-	| declaration_specifiers init_declarator_list ';'
-	;
-
-declaration_specifiers
-	: storage_class_specifier declaration_specifiers
-	| storage_class_specifier
-	| type_specifier declaration_specifiers
-	| type_specifier
-	| CONST declaration_specifiers
-	| CONST
+	: type_specifier ';'
+	| type_specifier init_declarator_list ';'
 	;
 
 init_declarator_list
@@ -201,27 +168,16 @@ init_declarator_list
 	;
 
 init_declarator
-	: declarator '=' assignment_expression
-	| declarator
-	;
-
-storage_class_specifier
-	: TYPEDEF	/* identifiers must be flagged as TYPEDEF_NAME */
-	| STATIC
+	: declarator '=' assignment_expression					{/* Make new entry */printf("%s\n",$<name>1);}
+	| declarator 							
 	;
 
 type_specifier
 	: VOID
 	| CHAR
-	| SHORT
 	| INT
-	| LONG
 	| FLOAT
-	| DOUBLE
-	| SIGNED
-	| UNSIGNED
 	| struct_specifier
-	| TYPEDEF_NAME		/* after it has been defined as such */
 	;
 
 struct_specifier
@@ -243,8 +199,6 @@ struct_declaration
 specifier_qualifier_list
 	: type_specifier specifier_qualifier_list
 	| type_specifier
-	| CONST specifier_qualifier_list
-	| CONST
 	;
 
 struct_declarator_list
@@ -259,29 +213,24 @@ struct_declarator
 	;
 
 declarator
-	: pointer IDENTIFIER
-	| IDENTIFIER
-	;
-
-pointer
-	: '*' CONST pointer
-	| '*' CONST
-	| '*' pointer
-	| '*'
+	: IDENTIFIER
 	;
 
 statement
 	: compound_statement
 	| expression_statement
 	| iteration_statement
-	| jump_statement
 	;
 
 compound_statement
-	: '{' '}'
-	| '{'  block_item_list '}'
+	: '{' new_scope '}' 
+	| '{'  new_scope block_item_list '}'
 	;
-
+	
+new_scope
+	: 
+	;
+	
 block_item_list
 	: block_item
 	| block_item_list block_item
@@ -298,17 +247,10 @@ expression_statement
 	;
 
 iteration_statement
-	: FOR '(' expression_statement expression_statement ')' statement
+	: FOR '(' expression_statement expression_statement ')' statement		
 	| FOR '(' expression_statement expression_statement expression ')' statement
-	| FOR '(' declaration expression_statement ')' statement
+	| FOR '(' declaration expression_statement ')' statement	
 	| FOR '(' declaration expression_statement expression ')' statement
-	;
-
-jump_statement
-	: CONTINUE ';'
-	| BREAK ';'
-	| RETURN ';'
-	| RETURN expression ';'
 	;
 
 translation_unit
@@ -319,10 +261,81 @@ translation_unit
 external_declaration
 	: INT MAIN '(' ')' compound_statement
 	| declaration
-	| headers
+	| headers 	
 	;
 
 %%
+
+symbol *init_attribute(char *var_name , char *type, char *value)
+{
+	symbol *record = malloc(sizeof(symbol));
+
+	strcpy(record->var_name, var_name);
+	strcpy(record->type, type);
+	record->value = value;
+	
+	return record;
+}
+int push(char *var_name, int flag, char *type, char *value)
+{
+	// if stack is full
+	if(top == VAR_LIMIT - 1)
+	{
+		return -1;
+	}
+	// insert in new scope
+	else if(flag == 1)
+	{
+		top++;
+		symbol *temp = init_attribute(var_name, type, value);
+		stack[top].symbol_list[++(stack[top].last_inserted)] = temp;			
+		return top;	
+	}
+	// insert in existing scope
+	else
+	{
+		if( search_stack(var_name) == -1)
+		{
+			printf("Variable Definition Already Exists!");
+		}
+		
+		symbol *temp = init_attribute(var_name, type, value);
+		stack[top].symbol_list[++(stack[top].last_inserted)] = temp;
+		
+		return top;
+	}
+}
+
+int search_stack(char *var_entry)
+{
+	int i;
+	for(i = top; i >= 0; i--)
+	{
+		int j;
+		int len_scope = stack[i].last_inserted;
+		for(j = 0; j <= len_scope; j++)
+		{
+			if( !strcmp(stack[i].symbol_list[j]->var_name, var_entry) )
+				return -1;
+		}
+	}
+	return 0;
+}
+
+int pop()
+{
+	// if stack is empty
+	if(top == -1)
+	{
+		return -1;
+	}
+	memset(&stack[top], stack[top].last_inserted * sizeof(struct symbol_table), 0);
+	stack[top].last_inserted = -1;
+	top--;
+	return top;
+}
+
+
 void yyerror(const char *str)
 {
 	fflush(stdout);
