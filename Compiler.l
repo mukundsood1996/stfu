@@ -54,8 +54,8 @@ define		{ return DEFINE; }
 for		{ return(FOR); }
 
 	/* User Defined Data Types, Identifiers */
-{L}{A}*						{return IDENTIFIER;}
-{D}+							{ return INTEGER_LITERAL;}	
+{L}{A}*						{ strcpy(yylval.string,yytext); return IDENTIFIER;}
+{D}+							{ strcpy(yylval.string,yytext); return INTEGER_LITERAL;}	
 \"{A}+(".h"|".c")\"				{return HEADER_LITERAL;}
 L?\"(\\.|[^\\"])*\"	{ return(STRING_LITERAL); }
 

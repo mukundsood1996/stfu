@@ -2,12 +2,45 @@
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <string.h>
+	#define LIMIT 1024
 	void yyerror(const char*);
 	int yylex();
+
+	int temp = 0;
+	int quad_size = 0;
+
+	struct Symbol {
+		char name[LIMIT];
+		char type[LIMIT];
+		char value[LIMIT];
+	}symbol_table[LIMIT];
+	
+	struct Quadraple {
+		char operator[LIMIT];
+		char operand1[LIMIT];
+		char operand2[LIMIT];
+		char result[LIMIT];
+	}quadraple_table[LIMIT];
+
+	struct Stack {
+		char *items[LIMIT];
+		int top;
+	}stack;
+
+	void add_quadraple(char [], char [], char [], char []);
+	void arithmetic_quad(char []);
+	void display_quadraple();
+	void push(char *);
+	char *pop();
 
 
 %}
 
+%union
+{
+	int ival;
+	char string[128];
+}
 
 %token HASH INCLUDE DEFINE STDIO STDLIB MATH STRING TIME
 
@@ -15,7 +48,7 @@
 
 %token	INC_OP DEC_OP LE_OP GE_OP EQ_OP NE_OP
 
-%token	MUL_ASSIGN DIV_ASSIGN MOD_ASSIGN ADD_ASSIGN SUB_ASSIGN
+%token	ADD_ASSIGN SUB_ASSIGN
 
 %token	CHAR INT FLOAT VOID MAIN
 
@@ -41,8 +74,8 @@ libraries
 	;
 
 primary_expression
-	: IDENTIFIER
-	| INTEGER_LITERAL
+	: IDENTIFIER	{push($1.string);}
+	| INTEGER_LITERAL {push($1.string);}
 	| STRING_LITERAL		
 	| '(' expression ')'
 	;
@@ -66,39 +99,45 @@ unary_operator
 	;
 
 multiplicative_expression
-	: unary_expression
-	| multiplicative_expression '*' unary_expression
-	| multiplicative_expression '/' unary_expression
-	| multiplicative_expression '%' unary_expression
+	: unary_expression {push($1.string);}
+	| multiplicative_expression '*' unary_expression	{arithmetic_quad("*");}
+	| multiplicative_expression '/' unary_expression {arithmetic_quad("/");}
+	| multiplicative_expression '%' unary_expression  {arithmetic_quad("%");}
 	;
 
 additive_expression
-	: multiplicative_expression
-	| additive_expression '+' multiplicative_expression
+	: multiplicative_expression {push($1.string);}
+	| additive_expression '+' multiplicative_expression {arithmetic_quad("+");}
 	| additive_expression '-' multiplicative_expression
+{arithmetic_quad("-");}
 	;
 
 relational_expression
-	: additive_expression
-	| relational_expression '<' additive_expression
+	: additive_expression {push($1.string);}
+	| relational_expression '<' additive_expression {arithmetic_quad("<");}
 	| relational_expression '>' additive_expression
+{arithmetic_quad(">");}
 	| relational_expression LE_OP additive_expression
+{arithmetic_quad("<=");}
 	| relational_expression GE_OP additive_expression
+{arithmetic_quad(">=");}
 	;
 
 equality_expression
-	: relational_expression
+	: relational_expression {push($1.string);}
 	| equality_expression EQ_OP relational_expression
+{arithmetic_quad("==");}
 	| equality_expression NE_OP relational_expression
+{arithmetic_quad("!=");}
 	;
 
 conditional_expression
-	: equality_expression
+	: equality_expression 
 	| equality_expression '?' expression ':' conditional_expression
 	;
 
 assignment_expression
-	: conditional_expression
+	: conditional_expression {push($1.string);}
 	| unary_expression assignment_operator assignment_expression
 	;
 
@@ -109,7 +148,7 @@ assignment_operator
 	;
 
 expression
-	: assignment_expression
+	: assignment_expression {push($1.string);}
 	| expression ',' assignment_expression
 	;
 
@@ -128,7 +167,9 @@ init_declarator_list
 	;
 
 init_declarator
-	: IDENTIFIER '=' assignment_expression
+	: IDENTIFIER '=' assignment_expression {
+		add_quadraple("=", "", pop(), $1.string);		
+		}
 	| IDENTIFIER
 	;
 
@@ -151,7 +192,7 @@ struct_declaration_list
 	;
 
 struct_declaration
-	: specifier_qualifier_list ';'	/* for anonymous struct/union */
+	: specifier_qualifier_list ';'	
 	| specifier_qualifier_list struct_declarator_list ';'
 	;
 
@@ -223,10 +264,58 @@ void yyerror(const char *str)
 	fprintf(stderr, "*** %s\n", str);
 }
 int main(){
+	stack.top = -1;
 	if(!yyparse())
+	{
 		printf("Successful\n");
+		display_quadraple();
+	}
 	else
 		printf("Unsuccessful\n");
-	
+
 	return 0;
 }
+
+void push(char *str)
+{
+	stack.items[++stack.top] = (char*)malloc(LIMIT);
+	strcpy(stack.items[stack.top], str);
+}
+
+char *pop()
+{
+	if (stack.top <= -1) {
+		printf("\nError in evaluating expression\n");
+		exit(0);
+	}
+	char *str = (char*)malloc(LIMIT);
+	strcpy(str, stack.items[stack.top--]);
+	return str;
+}
+
+void add_quadraple(char op[10], char op2[10],char op1[10], char res[10])
+{
+	strcpy(quadraple_table[quad_size].operator, op);
+	strcpy(quadraple_table[quad_size].operand2, op2);
+	strcpy(quadraple_table[quad_size].operand1, op1);
+	strcpy(quadraple_table[quad_size++].result, res);
+}
+void display_quadraple()
+{
+	printf("ID\t\tRESULT\t\tOPERATOR\tOPERAND1\tOPERAND2\n");
+	int i = 0;
+	for(; i < quad_size; i++) 
+		printf("\n%3d\t%12s\t%12s\t%12s\t%12s\n", i, quadraple_table[i].result, quadraple_table[i].operator, quadraple_table[i].operand1, quadraple_table[i].operand2);
+
+}
+void arithmetic_quad(char op[5])
+{
+	char num[5];
+	char num2[5];
+	strcpy(num2, "t");
+	sprintf(num, "%d", temp++);
+	strcat(num2, num);
+	add_quadraple(op, pop(), pop(), num2);
+	push(num2);
+}
+
