@@ -1,6 +1,7 @@
 %{
 	#include <stdio.h>
 	#include "y.tab.h"
+	#include<string.h>
 
 	//#define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;
 
@@ -29,11 +30,11 @@ WS  		[ \t\v\n\f]
 "//"[^\n]*	{ /* Consume Comment */ }
 
 	/* Data Types */
-int		{ return(INT); }
-float		{ return(FLOAT); }
-char		{ return(CHAR); }
-void		{ return(VOID); }
-main		{ return(MAIN); }
+int			{ strcpy(yylval.string,yytext); return(INT); }
+float		{ strcpy(yylval.string,yytext); return(FLOAT); }
+char		{ strcpy(yylval.string,yytext); return(CHAR); }
+void		{ strcpy(yylval.string,yytext); return(VOID); }
+main		{ strcpy(yylval.string,yytext); return(MAIN); }
 
 	/* User Defined Data Types */
 struct		{ return(STRUCT); }
@@ -54,18 +55,16 @@ define		{ return DEFINE; }
 for		{ return(FOR); }
 
 	/* User Defined Data Types, Identifiers */
-{L}{A}*							{ yylval.name = strdup(yytext);return IDENTIFIER; }
-{D}+							{ yylval.i = atoi(yytext); return INT_CONST;}
-{D}+\.{D}+						{ yylval.fp = atof(yytext); return FLOAT_CONST;}							
+{L}{A}*						{ strcpy(yylval.string,yytext); return IDENTIFIER;}
+{D}+							{ strcpy(yylval.string,yytext); return INTEGER_LITERAL;}
+{D}+\.{D}+						{ strcpy(yylval.string,yytext); return FLOAT_LITERAL;}
 \"{A}+(".h"|".c")\"				{return HEADER_LITERAL;}
-\"{A}+\"						{yylval.str = strdup(yytext);return STRING_LITERAL;}
+L?\"(\\.|[^\\"])*\"	{ return(STRING_LITERAL); }
 
 	/* Assignment Operators */
 "+="		{return(ADD_ASSIGN); }
 "-="		{return(SUB_ASSIGN); }
-"*="		{return(MUL_ASSIGN); }
-"/="		{return(DIV_ASSIGN); }
-"%="		{return(MOD_ASSIGN); }
+
 
 	/* Relational Operators */
 "++"		{return(INC_OP); }
@@ -77,8 +76,8 @@ for		{ return(FOR); }
 
 	/* Basic Syntax */
 ";"		{return(';'); }
-("{"|"<%")	{yylval.str = strdup(yytext); return('{'); }
-("}"|"%>")	{yylval.str = strdup(yytext); return('}'); }
+"{"	{return('{'); }
+"}"	{return('}'); }
 ","		{return(','); }
 ":"		{return(':'); }
 "="		{return('='); }
@@ -90,13 +89,13 @@ for		{ return(FOR); }
 "&"		{return('&'); }
 "!"		{return('!'); }
 "~"		{return('~'); }
-"-"		{return('-'); }
-"+"		{return('+'); }
-"*"		{return('*'); }
-"/"		{return('/'); }
-"%"		{return('%'); }
-"<"		{return('<'); }
-">"		{return('>'); }
+"-"		{ strcpy(yylval.string,yytext);return('-'); }
+"+"		{ strcpy(yylval.string,yytext);return('+'); }
+"*"		{ strcpy(yylval.string,yytext);return('*'); }
+"/"		{ strcpy(yylval.string,yytext);return('/'); }
+"%"		{ strcpy(yylval.string,yytext);return('%'); }
+"<"		{ strcpy(yylval.string,yytext);return('<'); }
+">"		{ strcpy(yylval.string,yytext);return('>'); }
 "^"		{return('^'); }
 "|"		{return('|'); }
 "?"		{return('?'); }
