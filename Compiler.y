@@ -7,8 +7,14 @@
 	#define MAX_SCOPE 10		// defines max no of scopes allowed 
 	#define NEWSCOPE 1
 	#define OLDSCOPE 0
+	#define MAX_MEMBER 10
+	#define TYPE 6				// type can be int float void ....
+	#define MAX_NO_OF_STRUCT 10
+	#define STRUCT_FLAG 2
+	
+	int nested_struct_start_index;
 	int c = 0;
-	int global_flag;
+	int global_flag = NEWSCOPE;
 	void yyerror(const char*);
 	int yylex();
 	
@@ -18,18 +24,29 @@
 		char value[LIMIT];
 	};
 	
+	struct struct_data{
+		char struct_name[LIMIT];
+		char member_type[MAX_MEMBER][TYPE];
+		char member_name[MAX_MEMBER][LIMIT];
+		int index_to_insert_member;				// to know at which index do we have to insert new member
+	};
+	
 	struct stack_for_symbol_tables{
 		int index_to_insert;
+		int struct_index_to_insert;
+		struct struct_data struct_defined[MAX_NO_OF_STRUCT];
 		struct symbol symbol_table[MAX_SYMBOLS];
 	}symbol_table_stack[MAX_SCOPE];
 	
+	int struct_reference_used = 0;
 	int top_stack_for_symbol_tables = -1;
 	void fun(char *result ,char *arg1,char *arg2,char *arg3);
 	int push_my(char *type,char *name,char *value,int flag);
+	void struct_member_name(char* struct_name,int struct_index_to_insert);
 	int pop_my();
 	int search_my(char *name,int flag);
 	void display();
-
+	void display_struct();
 %}
 
 %union
@@ -52,7 +69,7 @@
 
 %token	FOR 
 
-%type <string> multiplicative_expression unary_expression init_declarator_list init_declarator declaration type_specifier assignment_expression IDENTIFIER additive_expression relational_expression equality_expression conditional_expression expression primary_expression postfix_expression
+%type <string> multiplicative_expression unary_expression init_declarator_list init_declarator declaration type_specifier assignment_expression IDENTIFIER additive_expression relational_expression equality_expression conditional_expression expression primary_expression postfix_expression struct_specifier struct_declaration_list struct_declaration specifier_qualifier_list struct_declarator_list struct_declarator 
 
 %start translation_unit
 
@@ -171,10 +188,18 @@ constant_expression
 	;
 
 declaration
-	: type_specifier ';'		{/*printf("151\n");*/}
+	: type_specifier ';'		{
+									if(!strcmp($1,"struct"))
+										display_struct();
+										//printf("151\n");
+								}
 	| type_specifier init_declarator_list ';'	{
+													if(!strcmp($1,"struct"))
+														display_struct();
 													//printf("152\n");
-													printf("%s \n",$2);
+													//display_struct();
+													//printf("%s \n",$1);
+													//printf("%s \n",$2);
 													char *type = $1;
 													if(index($2,'_') != NULL)
 													{
@@ -186,11 +211,19 @@ declaration
 														strncpy(name,$2,_index);
 														name[_index] = '\0';
 														strncpy(value,$2+_index+1,value_length);
-														value[value_length] = '\0';
+														//printf("VALUE %s length %d\n",value,strlen(value));
+														value[value_length-1] = '\0';
+														//printf("VALUE %s length %d\n",value,strlen(value));
 														push_my(type,name,value,global_flag);
-													} 
+													}
+													else if(!strcmp($1,"struct"))
+													{
+														//int struct_index_to_insert = symbol_table_stack[top_stack_for_symbol_tables].struct_index_to_insert;
+														//struct_member_name($2,struct_index_to_insert-1);
+													}
 													else
 													{
+														//printf("good night");
 														char name[strlen($2)+1];
 														strcpy(name,$2);
 														//name[strlen($2)] = '\0';
@@ -213,7 +246,7 @@ init_declarator
 											}
 	| IDENTIFIER							{
 												strncpy($$,$1,strlen($1) - 1);$$[strlen($$)] = '\0';
-												/*printf("162\n");*/
+												//printf("162\n");
 											}	
 	;
 
@@ -222,39 +255,47 @@ type_specifier
 	| CHAR 					{}
 	| INT 					{}
 	| FLOAT					{}
-	| struct_specifier		{}
+	| struct_specifier		{/*printf("Struct_specifier %s\n",$1);*/}
 	;
 
 struct_specifier
 	: STRUCT '{' struct_declaration_list '}'				{/*printf("174\n");*/}
-	| STRUCT IDENTIFIER '{' struct_declaration_list '}'		{/*printf("175\n");*/}
-	| STRUCT IDENTIFIER										{/*printf("176\n");*/}
+	| STRUCT IDENTIFIER '{' nested_struct struct_declaration_list '}'		{push_my("",$2,"",STRUCT_FLAG);/*strcpy($$,$1.string);printf("175\n");*/}
+	| STRUCT IDENTIFIER										{struct_reference_used = 1;/*printf("176\n");*/}
 	;
-
+nested_struct
+	:				{
+						if(top_stack_for_symbol_tables != -1)
+						{
+							int struct_index_to_insert = symbol_table_stack[top_stack_for_symbol_tables].struct_index_to_insert;
+							nested_struct_start_index = symbol_table_stack[top_stack_for_symbol_tables].struct_defined[struct_index_to_insert].index_to_insert_member;
+						}
+					}
+	;
 struct_declaration_list
-	: struct_declaration							{/*printf("180\n");*/}
+	: struct_declaration							{/*printf("%s \n",$1);printf("180\n");*/}
 	| struct_declaration_list struct_declaration	{/*printf("181\n");*/}
 	;
 
 struct_declaration	
 	: specifier_qualifier_list ';'							{/*printf("185\n");*/}
-	| specifier_qualifier_list struct_declarator_list ';'	{/*printf("186\n");*/}
+	| specifier_qualifier_list struct_declarator_list ';'	{push_my($1,$2,"",STRUCT_FLAG);/*printf("%s \n",$1);printf("%s \n",$2);printf("186\n");*/}
 	;
 
 specifier_qualifier_list
 	: type_specifier specifier_qualifier_list				{/*printf("190\n");*/}
-	| type_specifier										{/*printf("191\n");*/}
+	| type_specifier										{/*strcpy($$,$1);printf("%s \n",$1);printf("191\n");*/}
 	;
 
 struct_declarator_list
-	: struct_declarator									{/*printf("195\n");*/}
+	: struct_declarator									{/*strcpy($$,$1);printf("%s \n",$1);printf("195\n");*/}
 	| struct_declarator_list ',' struct_declarator		{/*printf("196\n");*/}
 	;
 
 struct_declarator
 	: ':' constant_expression					{/*printf("200\n");*/}
 	| IDENTIFIER ':' constant_expression		{/*printf("201\n");*/}
-	| IDENTIFIER								{/*printf("202\n");*/}
+	| IDENTIFIER								{/*strcpy($$,$1);printf("%s \n",$1);printf("202\n");*/}
 	;
 
 statement
@@ -302,8 +343,8 @@ translation_unit
 
 external_declaration
 	: INT MAIN '(' ')' compound_statement	{/*printf("249\n");*/}	
-	| declaration	{;}						{/*printf("250\n");*/}
-	| headers 		{;}						{/*printf("251\n");*/}
+	| declaration 							{/*printf("250\n");*/}
+	| headers 								{/*printf("251\n");*/}
 	;
 
 %%
@@ -325,6 +366,19 @@ int main(){
 }
 
 
+void struct_member_name(char* struct_name,int struct_index_to_insert)
+{
+	//printf("In struct_member_name function %s\n",symbol_table_stack[top_stack_for_symbol_tables].struct_defined[struct_index_to_insert].struct_name);
+	int index_to_insert_member = symbol_table_stack[top_stack_for_symbol_tables].struct_defined[struct_index_to_insert].index_to_insert_member;
+	int i;
+	//printf("nested_struct_start_index %d\n",nested_struct_start_index);
+	for(i=0;i<index_to_insert_member;i++)
+	{
+		strcat(symbol_table_stack[top_stack_for_symbol_tables].struct_defined[struct_index_to_insert].member_name[i],".");
+		strcat(symbol_table_stack[top_stack_for_symbol_tables].struct_defined[struct_index_to_insert].member_name[i],struct_name);
+	}
+	//printf("nested struct name %s\n",symbol_table_stack[top_stack_for_symbol_tables].struct_defined[struct_index_to_insert].member_name[i-1]);
+}
 
 int search_my(char *name,int flag)
 {
@@ -375,31 +429,86 @@ int push_my(char *type,char *name,char *value,int flag)
 		}
 		else
 		{
-			if(flag)
+			if(flag == NEWSCOPE)
 			{
-				strcpy(symbol_table_stack[++top_stack_for_symbol_tables].symbol_table[0].name,name);
-				strcpy(symbol_table_stack[top_stack_for_symbol_tables].symbol_table[0].type,type);
-				strcpy(symbol_table_stack[top_stack_for_symbol_tables].symbol_table[0].value,value);
-				symbol_table_stack[top_stack_for_symbol_tables].index_to_insert = 1;	
-				
+				top_stack_for_symbol_tables++;
 				global_flag = OLDSCOPE;
-				//printf("Name %s\n",symbol_table_stack[top_stack_for_symbol_tables].symbol_table[0].name);
-				//printf("Value %s\n",symbol_table_stack[top_stack_for_symbol_tables].symbol_table[0].value);
-				//printf("Type %s\n",symbol_table_stack[top_stack_for_symbol_tables].symbol_table[0].type);
 			}
-			else
+			if(flag != STRUCT_FLAG)
 			{
+				int index_to_insert = symbol_table_stack[top_stack_for_symbol_tables].index_to_insert;
 				if(symbol_table_stack[top_stack_for_symbol_tables].index_to_insert <= MAX_SYMBOLS)
 				{
-					strcpy(symbol_table_stack[top_stack_for_symbol_tables].symbol_table[symbol_table_stack[top_stack_for_symbol_tables].index_to_insert].name,name);
-					strcpy(symbol_table_stack[top_stack_for_symbol_tables].symbol_table[symbol_table_stack[top_stack_for_symbol_tables].index_to_insert].type,type);
-					strcpy(symbol_table_stack[top_stack_for_symbol_tables].symbol_table[symbol_table_stack[top_stack_for_symbol_tables].index_to_insert].value,value);
+					strcpy(symbol_table_stack[top_stack_for_symbol_tables].symbol_table[index_to_insert].name,name);
+					strcpy(symbol_table_stack[top_stack_for_symbol_tables].symbol_table[index_to_insert].type,type);
+					strcpy(symbol_table_stack[top_stack_for_symbol_tables].symbol_table[index_to_insert].value,value);
 					symbol_table_stack[top_stack_for_symbol_tables].index_to_insert += 1;
-				}	
+					//printf("Name %s\n",symbol_table_stack[top_stack_for_symbol_tables].symbol_table[0].name);
+					//printf("Value %s\n",symbol_table_stack[top_stack_for_symbol_tables].symbol_table[0].value);
+					//printf("Type %s\n",symbol_table_stack[top_stack_for_symbol_tables].symbol_table[0].type);
+				}
 				else
 				{
 					printf("Cannot have more than %d Symbols in each scope",MAX_SYMBOLS);
 					return -1;
+				}
+			}
+			else
+			{
+				if(global_flag == NEWSCOPE)
+				{
+					++top_stack_for_symbol_tables;
+					global_flag = OLDSCOPE;
+					//printf("inside struct\n");
+				}
+				int *struct_index_to_insert = &symbol_table_stack[top_stack_for_symbol_tables].struct_index_to_insert;
+				//int *index_to_insert_member = &symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].index_to_insert_member;
+				if(strlen(type) != 0 && strlen(name) != 0)
+				{
+					//printf("Struct member name %s\n",name);
+					//printf("Struct member type %s\n",type);
+					int *index_to_insert_member;
+					if(struct_reference_used == 0 && !strcmp(type,"struct")) 
+					{
+						{
+							//printf("!!!!!!!!!!!!!\n");
+							*struct_index_to_insert -= 1;
+							symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].struct_name[0] = '\0';
+							index_to_insert_member = &symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].index_to_insert_member;
+							int i;
+							//printf("nested_struct_start_index %d\n",nested_struct_start_index);
+							char new_name[2*LIMIT];
+							for(i=nested_struct_start_index;i<*index_to_insert_member;i++)
+							{
+								strcpy(new_name,name);
+								strcat(new_name,".");
+								strcat(new_name,symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].member_name[i]);
+								//printf("new name %s\n"new_name);
+								strcpy(symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].member_name[i],new_name);
+								//strcat(symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].member_name[i],".");
+								//strcat(symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].member_name[i],name);
+							}
+							//printf("nested struct name %s\n",symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].member_name[i-1]);
+							//printf("nested struct name %s\n",symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].member_type[i-1]);
+						}
+					}
+					else
+					{
+					index_to_insert_member = &symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].index_to_insert_member;
+					//printf("struct_index_to_insert %d\n",*struct_index_to_insert);
+					
+					//printf("index_to_insert_member %d\n",*index_to_insert_member);
+					strcpy(symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].member_type[*index_to_insert_member],type);
+					strcpy(symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].member_name[*index_to_insert_member],name);
+					*index_to_insert_member += 1;
+					struct_reference_used = 0;
+					}
+				}
+				else
+				{
+					//printf("Struct name %s\n",name);
+					strcpy(symbol_table_stack[top_stack_for_symbol_tables].struct_defined[*struct_index_to_insert].struct_name,name);
+					*struct_index_to_insert += 1;
 				}
 			}
 			return 0;
@@ -417,28 +526,54 @@ int pop_my()
 	else
 	{
 		top_stack_for_symbol_tables--; // need to clear stack top before decrementing
-		return 0;	
+		return 0;
 	}
 }
+
+void display_struct()
+{
+	int i = 0;
+	int j;
+	if(top_stack_for_symbol_tables != -1)
+	{
+		int struct_index_to_insert = symbol_table_stack[top_stack_for_symbol_tables].struct_index_to_insert;
+		for(i=0;i<struct_index_to_insert;i++)
+		{
+			//printf("Structure name %s\n",symbol_table_stack[top_stack_for_symbol_tables].struct_defined[i].struct_name);
+			int index_to_insert_member = symbol_table_stack[top_stack_for_symbol_tables].struct_defined[i].index_to_insert_member;
+			//printf("index_to_insert_member %d\n",index_to_insert_member);
+			for(j=0;j<index_to_insert_member;j++)
+			{
+				printf("Type: %s NAME: %s ",symbol_table_stack[top_stack_for_symbol_tables].struct_defined[i].member_type[j],symbol_table_stack[top_stack_for_symbol_tables].struct_defined[i].member_name[j]);
+			}
+			printf("\n");
+		}
+	}
+}
+
 
 void display()
 {
 	int i = 0;
-	int length = symbol_table_stack[top_stack_for_symbol_tables].index_to_insert;
-	for(i=0;i<length;i++)
+	if(top_stack_for_symbol_tables != -1)
 	{
-		printf("TYPE : %s\tNAME : %s\tVALUE : %s\n",symbol_table_stack[top_stack_for_symbol_tables].symbol_table[i].type,symbol_table_stack[top_stack_for_symbol_tables].symbol_table[i].name,symbol_table_stack[top_stack_for_symbol_tables].symbol_table[i].value);
+		int length = symbol_table_stack[top_stack_for_symbol_tables].index_to_insert;
+		for(i=0;i<length;i++)
+		{
+			printf("TYPE : %s\tNAME : %s\tVALUE : %s\n",symbol_table_stack[top_stack_for_symbol_tables].symbol_table[i].type,symbol_table_stack[top_stack_for_symbol_tables].symbol_table[i].name,symbol_table_stack[top_stack_for_symbol_tables].symbol_table[i].value);
+		}
 	}
 }
 
 void fun(char *result ,char *arg1,char *arg2,char *arg3)
 {
-	if(arg1[0] >= 65 && arg1[0] <= 90 || arg3[0] >= 60 && arg3[0] <= 90 || arg1[0] >= 97 && arg1[0] <= 122 || arg3[0] >= 97 && arg3[0] <= 122)
+	if((arg1[0] >= 65 && arg1[0] <= 90) || (arg3[0] >= 60 && arg3[0] <= 90) || (arg1[0] >= 97 && arg1[0] <= 122) || (arg3[0] >= 97 && arg3[0] <= 122))
 	{
 		char *p[128];
-		memcpy(result,arg1,strlen(arg1));
-		memcpy(result+strlen(result),arg2,2);
-		memcpy(result+strlen(result),arg3,strlen(arg3));
+		strncpy(result,arg1,strlen(arg1));
+		strncpy(result+strlen(result),arg2,2);
+		strncpy(result+strlen(result),arg3,strlen(arg3));
+		//printf("In If -> Result for %s * %s : %s\n",arg1,arg3,result);
 	}
 	else
 	{
@@ -457,6 +592,10 @@ void fun(char *result ,char *arg1,char *arg2,char *arg3)
 			temp = atof(arg1) < atof(arg3);
 		else if(!strcmp(arg2,">"))
 			temp = atof(arg1) > atof(arg3);
+		else if(!strcmp(arg2,"="))
+		{
+		}
 		gcvt(temp,6,result);
+		//printf("In Else -> Result for %s * %s : %s\n",arg1,arg3,result);
 	}	
 }

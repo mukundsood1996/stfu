@@ -37,7 +37,7 @@ void		{ strcpy(yylval.string,yytext); return(VOID); }
 main		{ strcpy(yylval.string,yytext); return(MAIN); }
 
 	/* User Defined Data Types */
-struct		{ return(STRUCT); }
+struct		{ strcpy(yylval.string,yytext); return(STRUCT); }
 
 	/* Headers */
 "#"		{ return HASH; }
