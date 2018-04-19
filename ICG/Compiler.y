@@ -11,12 +11,7 @@
 	int stmt = 0;
 	int create_stmt_no();
 	void display_triple();
-	char ICG[LIMIT][LIMIT];
-	int lineno = 0;
-	int temp_no = 0;
-	int label = 0;
-	FILE *outfile;
-/*	
+/*
 	struct Symbol {
 		char name[LIMIT];
 		char type[LIMIT];
@@ -43,14 +38,6 @@
 	}stack;
 //	void add_quadraple(char [], char [], char [], char []);
 	void add_triple(int, char [], char [], char []);
-	void arithmetic_gen(char op[5]);
-	void display_stack()
-	{
-		int i;
-		for(i=0; i<=stack.top; i++)
-			printf("%s ", stack.items[i]);
-		printf("\n");
-	}
 //	void arithmetic_quad(char []);
 //	void display_quadraple();
 	void push(char *);
@@ -58,6 +45,7 @@
 %}
 %union
 {
+	int ival;
 	char string[128];
 }
 %token HASH INCLUDE DEFINE STDIO STDLIB MATH STRING TIME
@@ -81,10 +69,10 @@ libraries
 	| TIME
 	;
 primary_expression
-	: IDENTIFIER	{push($1.string); $$ = $1;}
-	| INTEGER_LITERAL {push($1.string); $$ = $1;}
-	| FLOAT_LITERAL {push($1.string); $$ = $1;}
-	| STRING_LITERAL {push($1.string); $$ = $1;}	
+	: IDENTIFIER	{push($1.string);}
+	| INTEGER_LITERAL {push($1.string);}
+	| FLOAT_LITERAL {push($1.string);}
+	| STRING_LITERAL		
 	| '(' expression ')'
 	;
 postfix_expression
@@ -104,39 +92,42 @@ unary_operator
 	;
 multiplicative_expression
 	: unary_expression //{push($1.string);}
-	| multiplicative_expression '*' unary_expression {arithmetic_gen("*");} //	{arithmetic_quad("*");}
-	| multiplicative_expression '/' unary_expression {arithmetic_gen("/");}//{arithmetic_quad("/");}
-	| multiplicative_expression '%' unary_expression {arithmetic_gen("%");}//{arithmetic_quad("%");}s
+	| multiplicative_expression '*' unary_expression {add_triple(create_stmt_no(), "*", pop(), pop());
+							char temp[LIMIT];
+							sprintf(temp, "(%d)", get_stmt_no());
+							push(temp);}//	{arithmetic_quad("*");}
+	| multiplicative_expression '/' unary_expression //{arithmetic_quad("/");}
+	| multiplicative_expression '%' unary_expression  //{arithmetic_quad("%");}
 	;
 additive_expression
 	: multiplicative_expression //{push($1.string);}
-	| additive_expression '+' multiplicative_expression {arithmetic_gen("+");}//{arithmetic_quad("+");}
-	| additive_expression '-' multiplicative_expression {arithmetic_gen("/");}//{//arithmetic_quad("-");}
+	| additive_expression '+' multiplicative_expression //{arithmetic_quad("+");}
+	| additive_expression '-' multiplicative_expression //{//arithmetic_quad("-");}
 	;
 relational_expression
 	: additive_expression //{push($1.string);}
-	| relational_expression '<' additive_expression {arithmetic_gen("<");}//{//arithmetic_quad("<");}
-	| relational_expression '>' additive_expression {arithmetic_gen(">");}
+	| relational_expression '<' additive_expression //{//arithmetic_quad("<");}
+	| relational_expression '>' additive_expression
 //{arithmetic_quad(">");}
-	| relational_expression LE_OP additive_expression {arithmetic_gen("<=");}
+	| relational_expression LE_OP additive_expression
 //{arithmetic_quad("<=");}
-	| relational_expression GE_OP additive_expression {arithmetic_gen(">=");}
+	| relational_expression GE_OP additive_expression
 //{arithmetic_quad(">=");}
 	;
 equality_expression
 	: relational_expression //{push($1.string);}
-	| equality_expression EQ_OP relational_expression {arithmetic_gen("==");}
+	| equality_expression EQ_OP relational_expression
 //{arithmetic_quad("==");}
-	| equality_expression NE_OP relational_expression {arithmetic_gen("!=");}
+	| equality_expression NE_OP relational_expression
 //{arithmetic_quad("!=");}
 	;
 conditional_expression
 	: equality_expression 
-	| equality_expression {fprintf(outfile, "if not %s goto L%d\n", pop(), ++label);} '?' expression {fprintf(outfile, "goto L%d\n", ++label);} ':' {fprintf(outfile, "L%d :\n", label-1);} conditional_expression {fprintf(outfile, "L%d :\n", label);}
+	| equality_expression '?' expression ':' conditional_expression
 	;
 assignment_expression
 	: conditional_expression //{push($1.string);}
-	| unary_expression assignment_operator assignment_expression  {fprintf(outfile, "%s = %s\n", pop(), pop());}
+	| unary_expression assignment_operator assignment_expression
 	;
 assignment_operator
 	: '='
@@ -159,7 +150,7 @@ init_declarator_list
 	| init_declarator_list ',' init_declarator
 	;
 init_declarator
-	: IDENTIFIER '=' assignment_expression {fprintf(outfile, "%s = %s\n", $1.string, pop());}//{add_quadraple("=", "", pop(), $1.string);}
+	: IDENTIFIER '=' assignment_expression //{add_quadraple("=", "", pop(), $1.string);}
 	| IDENTIFIER
 	;
 type_specifier
@@ -216,8 +207,10 @@ expression_statement
 	| expression ';'
 	;
 iteration_statement
-//	: FOR '(' expression_statement {fprintf(outfile, "L%d :\n", ++label);} expression_statement {fprintf(outfile, "if not %s goto L%d\n", pop(), ++label);} ')' statement {fprintf(outfile, "goto L%d\n", label-1);} 		
-	: FOR '(' expression_statement {fprintf(outfile, "L%d :\n", ++label);} expression_statement {fprintf(outfile, "if not %s goto L%d\ngoto L%d\nL%d : \n", pop(), ++label, ++label, ++label);} expression {fprintf(outfile, "goto L%d\n", label-3);}')' {fprintf(outfile, "L%d :\n", label-1);} statement {fprintf(outfile, "goto L%d\nL%d: \n", label-2, label);}
+	: FOR '(' expression_statement expression_statement ')' statement
+	| FOR '(' expression_statement expression_statement expression ')' statement
+	| FOR '(' declaration expression_statement ')' statement	
+	| FOR '(' declaration expression_statement expression ')' statement
 	;
 translation_unit
 	: external_declaration
@@ -236,14 +229,9 @@ void yyerror(const char *str)
 }
 int main(){
 	stack.top = -1;
-	outfile = fopen("output_file.txt", "w");
 	yyparse();
 	printf("success\n");
-	int i = 0;
-
-//	for(; i < lineno; i++)
-//		printf("\n%s\n", ICG[i]);
-//	display_triple();
+	display_triple();
 /*
 	if(!yyparse())
 	{
@@ -253,8 +241,6 @@ int main(){
 	else
 		printf("Unsuccessful\n");
 */
-	fclose(outfile);
-	system("cat output_file.txt");
 	return 0;
 }
 void push(char *str)
@@ -307,14 +293,6 @@ void add_triple(int stmt_no, char operator[10],char op1[10], char op2[10])
 	strcpy(triple_table[trip_size].operator, operator);
 	strcpy(triple_table[trip_size].operand2, op2);
 	strcpy(triple_table[trip_size++].operand1, op1);
-}
-void arithmetic_gen(char op[5])
-{
-	char temp[5];
-	sprintf(temp,"t%d",temp_no++);
-  	fprintf(outfile,"%s = %s %s %s\n",temp,stack.items[stack.top-1],op,stack.items[stack.top]);
-	pop(); pop(); push(temp);
-//	display_stack();
 }
 int create_stmt_no()
 {
