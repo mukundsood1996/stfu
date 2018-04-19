@@ -37,7 +37,7 @@ void		{ strcpy(yylval.string,yytext); return(VOID); }
 main		{ strcpy(yylval.string,yytext); return(MAIN); }
 
 	/* User Defined Data Types */
-struct		{ return(STRUCT); }
+struct		{ strcpy(yylval.string,yytext); return(STRUCT); }
 
 	/* Headers */
 "#"		{ return HASH; }
@@ -55,7 +55,7 @@ define		{ return DEFINE; }
 for		{ return(FOR); }
 
 	/* User Defined Data Types, Identifiers */
-{L}{A}*						{ strcpy(yylval.string,yytext); return IDENTIFIER;}
+{L}{A}*						{	 strcpy(yylval.string,yytext); return IDENTIFIER;}
 {D}+							{ strcpy(yylval.string,yytext); return INTEGER_LITERAL;}
 {D}+\.{D}+						{ strcpy(yylval.string,yytext); return FLOAT_LITERAL;}
 \"{A}+(".h"|".c")\"				{return HEADER_LITERAL;}
