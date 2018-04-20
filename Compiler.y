@@ -3,6 +3,8 @@
 	#include <stdlib.h>
 	#include <string.h>
 	#define LIMIT 1024
+
+//	extern int lineno = 0;
 	void yyerror(const char*);
 	int yylex();
 	int temp_no = 0;
@@ -31,6 +33,7 @@
 %token	CHAR INT FLOAT VOID MAIN
 %token	STRUCT
 %token	FOR 
+
 %start translation_unit
 %%
 headers
@@ -60,11 +63,8 @@ postfix_expression
 	;
 unary_expression
 	: postfix_expression 	{$$=$1;}
-	| unary_operator unary_expression
-	;
-unary_operator
-	: '+'
-	| '-'
+	| '+' unary_expression {char temp[5]; strcpy(temp, pop()); push("0"); push(temp); arithmetic_gen("+");}
+	| '-' unary_expression {char temp[5]; strcpy(temp, pop()); push("0"); push(temp); arithmetic_gen("-");}
 	;
 multiplicative_expression
 	: unary_expression
@@ -95,7 +95,7 @@ conditional_expression
 	;
 assignment_expression
 	: conditional_expression
-	| unary_expression '=' equality_expression {fprintf(outfile, "if not %s goto L%d\n", pop(), ++label);} '?' expression {fprintf(outfile, "%s = %s\n", $1.string, pop());fprintf(outfile, "goto L%d\n", ++label);} ':'  conditional_expression {fprintf(outfile, "L%d :\n%s = %s\n", label-1, $1.string, pop()); pop(); fprintf(outfile, "goto L%d", label);}
+	| unary_expression '=' equality_expression {fprintf(outfile, "if not %s goto L%d\n", pop(), ++label);} '?' expression {fprintf(outfile, "%s = %s\n", $1.string, pop());fprintf(outfile, "goto L%d\n", ++label);} ':'  conditional_expression {fprintf(outfile, "L%d :\n%s = %s\n", label-1, $1.string, pop()); pop(); fprintf(outfile, "L%d :\n", label);}
 	| unary_expression '=' assignment_expression  {fprintf(outfile, "%s = %s\n", pop(), pop());}
 	| unary_expression ADD_ASSIGN assignment_expression  {arithmetic_gen("+"); fprintf(outfile, "%s = %s\n", $1.string, pop());}
 	| unary_expression SUB_ASSIGN assignment_expression  {arithmetic_gen("-"); fprintf(outfile, "%s = %s\n", $1.string, pop());}
@@ -117,6 +117,7 @@ init_declarator_list
 	;
 init_declarator
 	: IDENTIFIER '=' assignment_expression {fprintf(outfile, "%s = %s\n", $1.string, pop());}
+//	| IDENTIFIER '=' equality_expression {fprintf(outfile, "if not %s goto L%d\n", pop(), ++label);} '?' expression {fprintf(outfile, "%s = %s\n", $1.string, pop());fprintf(outfile, "goto L%d\n", ++label);} ':'  conditional_expression {fprintf(outfile, "L%d :\n%s = %s\n", label-1, $1.string, pop()); pop(); fprintf(outfile, "goto L%d\n", label);}
 	| IDENTIFIER
 	;
 type_specifier
@@ -189,7 +190,7 @@ external_declaration
 void yyerror(const char *str)
 {
 	fflush(stdout);
-	fprintf(stderr, "*** %s\n", str);
+	fprintf(stderr, "%s at line\n", str);
 }
 int main(){
 	stack.top = -1;
