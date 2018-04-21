@@ -38,7 +38,9 @@ int main()
 	int s1_per = ((s1.cs351 + s1.cs352 + s1.cs353)*100)/total_marks;
 	int s2_per = ((s2.cs351 + s2.cs352 + s2.cs353)*100)/total_marks;
 
+
+
 	//printf("Result of s1 : ");
-	s1_percent > 40 ? "PASS" : "FAIL";
+	int res = s1_percent > 40 ? 1 : 0;
 }
 

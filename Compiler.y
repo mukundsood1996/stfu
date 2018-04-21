@@ -60,6 +60,8 @@ postfix_expression
 	| postfix_expression '.' IDENTIFIER
 	| postfix_expression INC_OP {push($1.string); push("1"); arithmetic_gen("+"); fprintf(outfile, "%s = %s\n", pop(), pop());}
 	| postfix_expression DEC_OP {push($1.string); push("1"); arithmetic_gen("-"); fprintf(outfile, "%s = %s\n", pop(), pop());}
+	| INC_OP primary_expression {push($2.string); push("1"); arithmetic_gen("+"); fprintf(outfile, "%s = %s\n", pop(), pop());}
+	| DEC_OP primary_expression {push($2.string); push("1"); arithmetic_gen("-"); fprintf(outfile, "%s = %s\n", pop(), pop());}
 	;
 unary_expression
 	: postfix_expression 	{$$=$1;}
@@ -75,7 +77,7 @@ multiplicative_expression
 additive_expression
 	: multiplicative_expression
 	| additive_expression '+' multiplicative_expression {arithmetic_gen("+");}
-	| additive_expression '-' multiplicative_expression {arithmetic_gen("/");}
+	| additive_expression '-' multiplicative_expression {arithmetic_gen("-");}
 	;
 relational_expression
 	: additive_expression
@@ -91,11 +93,10 @@ equality_expression
 	;
 conditional_expression
 	: equality_expression 
-//	| equality_expression {fprintf(outfile, "if not %s goto L%d\n", pop(), ++label);} '?' expression {fprintf(outfile, "goto L%d\n", ++label);} ':' {fprintf(outfile, "L%d :\n", label-1);} conditional_expression {fprintf(outfile, "L%d :\n", label);}
+	| equality_expression {fprintf(outfile, "ifFalse %s goto L%d\n", pop(), ++label); char temp[5]; sprintf(temp, "t%d", temp_no++); push(temp);} '?' expression {gen_true_code();} ':' conditional_expression {gen_false_code();}
 	;
 assignment_expression
 	: conditional_expression
-	| unary_expression '=' equality_expression {fprintf(outfile, "if not %s goto L%d\n", pop(), ++label);} '?' expression {fprintf(outfile, "%s = %s\n", $1.string, pop());fprintf(outfile, "goto L%d\n", ++label);} ':'  conditional_expression {fprintf(outfile, "L%d :\n%s = %s\n", label-1, $1.string, pop()); pop(); fprintf(outfile, "L%d :\n", label);}
 	| unary_expression '=' assignment_expression  {fprintf(outfile, "%s = %s\n", pop(), pop());}
 	| unary_expression ADD_ASSIGN assignment_expression  {arithmetic_gen("+"); fprintf(outfile, "%s = %s\n", $1.string, pop());}
 	| unary_expression SUB_ASSIGN assignment_expression  {arithmetic_gen("-"); fprintf(outfile, "%s = %s\n", $1.string, pop());}
@@ -104,6 +105,7 @@ expression
 	: assignment_expression 
 	| expression ',' assignment_expression
 	;
+
 constant_expression
 	: conditional_expression	/* with constraints */
 	;
@@ -116,9 +118,9 @@ init_declarator_list
 	| init_declarator_list ',' init_declarator
 	;
 init_declarator
-	: IDENTIFIER '=' assignment_expression {fprintf(outfile, "%s = %s\n", $1.string, pop());}
+	: IDENTIFIER {push($1.string); $$=$1;} '=' assignment_expression {fprintf(outfile, "%s = %s\n", $1.string, pop());}
 //	| IDENTIFIER '=' equality_expression {fprintf(outfile, "if not %s goto L%d\n", pop(), ++label);} '?' expression {fprintf(outfile, "%s = %s\n", $1.string, pop());fprintf(outfile, "goto L%d\n", ++label);} ':'  conditional_expression {fprintf(outfile, "L%d :\n%s = %s\n", label-1, $1.string, pop()); pop(); fprintf(outfile, "goto L%d\n", label);}
-	| IDENTIFIER
+	| IDENTIFIER {push($1.string); $$=$1;}
 	;
 type_specifier
 	: VOID
@@ -174,8 +176,8 @@ expression_statement
 	| expression ';'
 	;
 iteration_statement
-//	: FOR '(' expression_statement {fprintf(outfile, "L%d :\n", ++label);} expression_statement {fprintf(outfile, "if not %s goto L%d\n", pop(), ++label);} ')' statement {fprintf(outfile, "goto L%d\n", label-1);} 		
-	: FOR '(' expression_statement {fprintf(outfile, "L%d :\n", ++label);} expression_statement {fprintf(outfile, "if not %s goto L%d\ngoto L%d\nL%d : \n", pop(), ++label, ++label, ++label);} expression {fprintf(outfile, "goto L%d\n", label-3);}')' {fprintf(outfile, "L%d :\n", label-1);} statement {fprintf(outfile, "goto L%d\nL%d: \n", label-2, label);}
+	// FOR '(' expression_statement {fprintf(outfile, "L%d :\n", ++label);} expression_statement {fprintf(outfile, "ifFalse %s goto L%d\n", pop(), ++label);} ')' statement {fprintf(outfile, "goto L%d\nL%d", label-1, label);} 		
+	: FOR '(' expression_statement {fprintf(outfile, "L%d :\n", ++label);} expression_statement {fprintf(outfile, "ifFalse %s goto L%d\ngoto L%d\nL%d : \n", pop(), ++label, ++label, ++label);} expression {fprintf(outfile, "goto L%d\n", label-3);}')' {fprintf(outfile, "L%d :\n", label-1);} statement {fprintf(outfile, "goto L%d\nL%d: \n", label-2, label);}
 	;
 translation_unit
 	: external_declaration
@@ -194,8 +196,13 @@ void yyerror(const char *str)
 }
 int main(){
 	stack.top = -1;
+	push("$");
 	outfile = fopen("output_file.txt", "w");
-	yyparse();
+	if (yyparse() != 0)
+	{
+		printf("Parse failed\n");
+		exit(0);
+	}
 	printf("success\n");
 	int i = 0;
 	fclose(outfile);
@@ -218,12 +225,15 @@ char *pop()
 	free(stack.items[stack.top+1]);
 	return str;
 }
-
+char *top(int off)
+{
+	return stack.items[stack.top-off];
+}
 void arithmetic_gen(char op[5])
 {
 	char temp[5];
 	sprintf(temp,"t%d",temp_no++);
-  	fprintf(outfile,"%s = %s %s %s\n",temp,stack.items[stack.top-1],op,stack.items[stack.top]);
+  	fprintf(outfile,"%s = %s %s %s\n",temp,top(1),op,top(0));
 	pop(); pop(); push(temp);
 }
 
@@ -234,4 +244,23 @@ void display_stack()
 		printf("%s ", stack.items[i]);
 		printf("\n");
 }
-
+void gen_true_code()
+{
+	if (stack.top > -1)
+	{
+		fprintf(outfile, "%s = %s\ngoto L%d\n", top(0), pop(), ++label);
+		fprintf(outfile, "L%d :\n", label-1);
+	}
+	else
+		fprintf(outfile, "%s\ngoto L%d\n", pop(), ++label);
+}
+void gen_false_code()
+{
+	if (stack.top > -1)
+	{
+		fprintf(outfile, "%s = %s\ngoto L%d\n", top(0), pop(), label);
+		fprintf(outfile, "L%d :\n", label);
+	}
+	else
+		fprintf(outfile, "%s\ngoto L%d\n", pop(), label-1);
+}
