@@ -15,11 +15,17 @@
 	void display_stack();
 	void push(char *);
 	char *pop();
+	void label_push(int);
+	char *label_pop();
 
-	struct Stack {
+	typedef struct Stack {
 		char *items[LIMIT];
 		int top;
-	}stack;
+	}Stack;
+	Stack stack;
+	Stack label_stack;
+
+	
 
 %}
 %union
@@ -177,7 +183,7 @@ expression_statement
 	;
 iteration_statement
 	// FOR '(' expression_statement {fprintf(outfile, "L%d :\n", ++label);} expression_statement {fprintf(outfile, "ifFalse %s goto L%d\n", pop(), ++label);} ')' statement {fprintf(outfile, "goto L%d\nL%d", label-1, label);} 		
-	: FOR '(' expression_statement {fprintf(outfile, "L%d :\n", ++label);} expression_statement {fprintf(outfile, "ifFalse %s goto L%d\ngoto L%d\nL%d : \n", pop(), ++label, ++label, ++label);} expression {fprintf(outfile, "goto L%d\n", label-3);}')' {fprintf(outfile, "L%d :\n", label-1);} statement {fprintf(outfile, "goto L%d\nL%d: \n", label-2, label);}
+	: FOR '(' expression_statement {fprintf(outfile, "L%d :\n", ++label);} expression_statement {fprintf(outfile, "ifFalse %s goto L%d\ngoto L%d\nL%d : \n", pop(), label+3, label+1, label+2); label_push(label+2); label_push(label+3); label_push(label+1); label_push(label);} expression {fprintf(outfile, "goto %s\n", label_pop()); label += 3;}')' {fprintf(outfile, "%s :\n", label_pop());} statement {fprintf(outfile, "goto %s\n%s: \n", label_pop(), label_pop());}
 	;
 translation_unit
 	: external_declaration
@@ -248,8 +254,10 @@ void gen_true_code()
 {
 	if (stack.top > -1)
 	{
-		fprintf(outfile, "%s = %s\ngoto L%d\n", top(0), pop(), ++label);
-		fprintf(outfile, "L%d :\n", label-1);
+		fprintf(outfile, "%s = %s\ngoto L%d\n", top(0), pop(), label+1);
+		label_push(label+1);
+		fprintf(outfile, "L%d :\n", label);
+		label_push(label+1);
 	}
 	else
 		fprintf(outfile, "%s\ngoto L%d\n", pop(), ++label);
@@ -258,9 +266,29 @@ void gen_false_code()
 {
 	if (stack.top > -1)
 	{
-		fprintf(outfile, "%s = %s\ngoto L%d\n", top(0), pop(), label);
-		fprintf(outfile, "L%d :\n", label);
+		fprintf(outfile, "%s = %s\ngoto %s\n", top(0), pop(), label_pop());
+		fprintf(outfile, "%s :\n", label_pop());
 	}
 	else
 		fprintf(outfile, "%s\ngoto L%d\n", pop(), label-1);
 }
+void label_push(int label)
+{
+	char temp[5];
+	sprintf(temp, "L%d", label);
+	label_stack.items[++label_stack.top] = malloc(LIMIT);
+	strcpy(label_stack.items[label_stack.top], temp);
+	
+}
+char *label_pop()
+{
+	if (label_stack.top <= -1) {
+		printf("\nError in evaluating expression\n");
+		exit(0);
+	}
+	char *str = (char*)malloc(LIMIT);
+	strcpy(str, label_stack.items[label_stack.top--]);
+	free(label_stack.items[label_stack.top+1]);
+	return str;
+}
+
