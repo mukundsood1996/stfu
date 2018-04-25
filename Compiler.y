@@ -183,7 +183,7 @@ expression_statement
 	;
 iteration_statement
 	// FOR '(' expression_statement {fprintf(outfile, "L%d :\n", ++label);} expression_statement {fprintf(outfile, "ifFalse %s goto L%d\n", pop(), ++label);} ')' statement {fprintf(outfile, "goto L%d\nL%d", label-1, label);} 		
-	: FOR '(' expression_statement {fprintf(outfile, "L%d :\n", ++label);} expression_statement {fprintf(outfile, "ifFalse %s goto L%d\ngoto L%d\nL%d : \n", pop(), label+3, label+1, label+2); label_push(label+2); label_push(label+3); label_push(label+1); label_push(label);} expression {fprintf(outfile, "goto %s\n", label_pop()); label += 3;}')' {fprintf(outfile, "%s :\n", label_pop());} statement {fprintf(outfile, "goto %s\n%s: \n", label_pop(), label_pop());}
+	: FOR '(' expression_statement {fprintf(outfile, "L%d :\n", ++label);} expression_statement {fprintf(outfile, "ifFalse %s goto L%d\ngoto L%d\nL%d : \n", pop(), label+3, label+1, label+2); label_push(label+2); label_push(label+3); label_push(label+1); label_push(label);} expression {fprintf(outfile, "goto %s\n", label_pop()); label += 3;}')' {fprintf(outfile, "%s :\n", label_pop());} statement {fprintf(outfile, "goto %s\n%s : \n", label_pop(), label_pop());}
 	;
 translation_unit
 	: external_declaration
